@@ -1,6 +1,25 @@
-# This file stores configurations for your Shopify app.
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
+client_id = "5cd5aa722dca4e268849751cbfd74f8c"
+name = "WonderW"
+handle = "WonderWorker-test"
+application_url = "https://ideas-forwarding-recommendation-unique.trycloudflare.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "niko-wonderwork.myshopify.com"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "write_products"
+
+[auth]
+redirect_urls = [
+  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/auth/callback",
+  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/auth/shopify/callback",
+  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/api/auth/callback"
+]
 
 [webhooks]
 api_version = "2024-07"
@@ -8,3 +27,6 @@ api_version = "2024-07"
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
   uri = "/webhooks"
+
+[pos]
+embedded = false
