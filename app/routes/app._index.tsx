@@ -13,6 +13,7 @@ import {
   List,
   Link,
   InlineStack,
+  Divider,
 } from "@shopify/polaris";
 import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
@@ -113,11 +114,8 @@ export default function Index() {
 
   return (
     <Page>
-      <TitleBar title="Remix app template">
-        <button variant="primary" onClick={generateProduct}>
-          Generate a product
-        </button>
-      </TitleBar>
+      <TitleBar title="Dashboard" />
+      <Divider />
       <BlockStack gap="500">
         <Layout>
           <Layout.Section>
