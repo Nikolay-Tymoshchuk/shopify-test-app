@@ -3,7 +3,7 @@
 client_id = "5cd5aa722dca4e268849751cbfd74f8c"
 name = "WonderW"
 handle = "WonderWorker-test"
-application_url = "https://ideas-forwarding-recommendation-unique.trycloudflare.com"
+application_url = "https://evaluated-page-notified-double.trycloudflare.com"
 embedded = true
 
 [build]
@@ -16,9 +16,9 @@ scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/auth/callback",
-  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/auth/shopify/callback",
-  "https://ideas-forwarding-recommendation-unique.trycloudflare.com/api/auth/callback"
+  "https://evaluated-page-notified-double.trycloudflare.com/auth/callback",
+  "https://evaluated-page-notified-double.trycloudflare.com/auth/shopify/callback",
+  "https://evaluated-page-notified-double.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
