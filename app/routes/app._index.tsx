@@ -1,7 +1,9 @@
-import { CSSProperties, FC, useCallback, useEffect, useState } from "react";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type { CSSProperties, FC } from "react";
+import { useCallback, useState } from "react";
+
+import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { useFetcher } from "@remix-run/react";
+// import { useFetcher } from "@remix-run/react";
 import type { TableData } from "@shopify/polaris";
 import {
   Page,
@@ -18,106 +20,62 @@ import {
   DataTable,
   Popover,
   ActionList,
+  EmptyState,
 } from "@shopify/polaris";
-import { useAppBridge } from "@shopify/app-bridge-react";
 import { authenticate } from "../shopify.server";
-import { CaretDownIcon, CaretUpIcon, InfoIcon } from "@shopify/polaris-icons";
-import sillyData from "@/data/sillyData.json";
+import { DeleteIcon, EditIcon, InfoIcon } from "@shopify/polaris-icons";
+import { useLoaderData, useNavigate } from "@remix-run/react";
+import { getFunnels } from "~/models/Funnel.server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.admin(request);
+interface EmptyQRCodeStateProps {
+  onAction: () => void;
+}
 
-  return null;
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-  const color = ["Red", "Orange", "Yellow", "Green"][
-    Math.floor(Math.random() * 4)
-  ];
-
-  const response = await admin.graphql(
-    `#graphql
-      mutation populateProduct($input: ProductInput!) {
-        productCreate(input: $input) {
-          product {
-            id
-            title
-            handle
-            status
-            variants(first: 10) {
-              edges {
-                node {
-                  id
-                  price
-                  barcode
-                  createdAt
-                }
-              }
-            }
-          }
-        }
-      }`,
-    {
-      variables: {
-        input: {
-          title: `${color} Snowboard`,
-        },
-      },
-    },
-  );
-  const responseJson = await response.json();
-
-  const variantId =
-    responseJson.data!.productCreate!.product!.variants.edges[0]!.node!.id!;
-  const variantResponse = await admin.graphql(
-    `#graphql
-      mutation shopifyRemixTemplateUpdateVariant($input: ProductVariantInput!) {
-        productVariantUpdate(input: $input) {
-          productVariant {
-            id
-            price
-            barcode
-            createdAt
-          }
-        }
-      }`,
-    {
-      variables: {
-        input: {
-          id: variantId,
-          price: Math.random() * 100,
-        },
-      },
-    },
-  );
-
-  const variantResponseJson = await variantResponse.json();
+export const loader = async ({ request }: { request: LoaderFunctionArgs }) => {
+  const { admin, session } = await authenticate.admin(request as any);
+  const funnels = await getFunnels(session.shop, admin.graphql);
 
   return json({
-    product: responseJson!.data!.productCreate!.product,
-    variant: variantResponseJson!.data!.productVariantUpdate!.productVariant,
+    funnels,
   });
 };
 
+const InfoTooltip: FC<{ content: string; style?: CSSProperties }> = ({
+  content = "",
+  style = {},
+}) => {
+  return (
+    <div style={{ ...style }}>
+      <Tooltip content={content}>
+        <Icon source={InfoIcon} tone="base" />
+      </Tooltip>
+    </div>
+  );
+};
+
+const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({ onAction }) => (
+  <EmptyState
+    heading="Create funnel to start discount program"
+    action={{
+      content: "Create funnel",
+      onAction,
+    }}
+    image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+  >
+    <p>You can start by clicking the button below.</p>
+  </EmptyState>
+);
+
 export default function Index() {
-  const fetcher = useFetcher<typeof action>();
+  const { funnels } = useLoaderData() as any;
+  const navigate = useNavigate();
+
   const [sortedRows, setSortedRows] = useState<TableData[][] | null>(null);
   const [activeId, setActiveId] = useState("");
 
   const toggleActive = useCallback(
     (id: string) => setActiveId(id === activeId ? "" : id),
     [activeId],
-  );
-
-  const handleImportedAction = useCallback(
-    () => console.log("Imported action"),
-    [],
-  );
-
-  const handleExportedAction = useCallback(
-    () => console.log("Exported action"),
-    [],
   );
 
   const activator = (id: string) => {
@@ -186,14 +144,17 @@ export default function Index() {
       >
         <ActionList
           actionRole="menuitem"
-          items={[
+          sections={[
             {
-              content: "Rename",
-              onAction: handleImportedAction,
-            },
-            {
-              content: "Delete",
-              onAction: handleExportedAction,
+              title: "File options",
+              items: [
+                { content: "Edit funnel", icon: EditIcon },
+                {
+                  destructive: true,
+                  content: "Delete funnel",
+                  icon: DeleteIcon,
+                },
+              ],
             },
           ]}
         />
@@ -268,135 +229,114 @@ export default function Index() {
     [rows],
   );
 
-  const shopify = useAppBridge();
-  const isLoading =
-    ["loading", "submitting"].includes(fetcher.state) &&
-    fetcher.formMethod === "POST";
-  const productId = fetcher.data?.product?.id.replace(
-    "gid://shopify/Product/",
-    "",
-  );
-
-  useEffect(() => {
-    if (productId) {
-      shopify.toast.show("Product created");
-    }
-  }, [productId, shopify]);
-  const generateProduct = () => fetcher.submit({}, { method: "POST" });
-
   return (
     <>
-      <Page
-        title="Dashboard"
-        titleMetadata={
-          <InfoTooltip content="Here you can view your store's performance" />
-        }
-      >
-        <BlockStack gap="800">
-          <Divider borderColor="border" borderWidth="025" />
-          <Layout>
-            <Layout.Section>
-              <Grid columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }}>
-                <Grid.Cell>
-                  <Card roundedAbove="sm">
-                    <Text as="h2" fontWeight="medium" variant="headingSm">
-                      Total Revenue
-                    </Text>
+      {funnels.length === 0 ? (
+        <EmptyQRCodeState onAction={() => navigate("settings/new")} />
+      ) : (
+        <>
+          (
+          <Page
+            title="Dashboard"
+            titleMetadata={
+              <InfoTooltip content="Here you can view your store's performance" />
+            }
+          >
+            <BlockStack gap="800">
+              <Divider borderColor="border" borderWidth="025" />
+              <Layout>
+                <Layout.Section>
+                  <Grid columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }}>
+                    <Grid.Cell>
+                      <Card roundedAbove="sm">
+                        <Text as="h2" fontWeight="medium" variant="headingSm">
+                          Total Revenue
+                        </Text>
 
-                    <Box paddingBlockStart="200">
-                      <Text as="p" variant="bodyLg" fontWeight="bold">
-                        $4.28
-                      </Text>
-                    </Box>
-                  </Card>
-                </Grid.Cell>
-                <Grid.Cell>
-                  <Card roundedAbove="sm">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Text as="h2" fontWeight="medium" variant="headingSm">
-                        Total Discounts
-                      </Text>
-                      <InfoTooltip content={"Total discounts applied"} />
-                    </div>
+                        <Box paddingBlockStart="200">
+                          <Text as="p" variant="bodyLg" fontWeight="bold">
+                            $4.28
+                          </Text>
+                        </Box>
+                      </Card>
+                    </Grid.Cell>
+                    <Grid.Cell>
+                      <Card roundedAbove="sm">
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text as="h2" fontWeight="medium" variant="headingSm">
+                            Total Discounts
+                          </Text>
+                          <InfoTooltip content={"Total discounts applied"} />
+                        </div>
 
-                    <Box paddingBlockStart="200">
-                      <Text as="p" variant="bodyLg" fontWeight="bold">
-                        $2.28
-                      </Text>
-                    </Box>
-                  </Card>
-                </Grid.Cell>
-                <Grid.Cell>
-                  <Card roundedAbove="sm">
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Text as="h2" fontWeight="medium" variant="headingSm">
-                        Order Count
-                      </Text>
-                      <InfoTooltip content={"Total number of orders"} />
-                    </div>
+                        <Box paddingBlockStart="200">
+                          <Text as="p" variant="bodyLg" fontWeight="bold">
+                            $2.28
+                          </Text>
+                        </Box>
+                      </Card>
+                    </Grid.Cell>
+                    <Grid.Cell>
+                      <Card roundedAbove="sm">
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <Text as="h2" fontWeight="medium" variant="headingSm">
+                            Order Count
+                          </Text>
+                          <InfoTooltip content={"Total number of orders"} />
+                        </div>
 
-                    <Box paddingBlockStart="200">
-                      <Text as="p" variant="bodyLg" fontWeight="bold">
-                        3
-                      </Text>
-                    </Box>
-                  </Card>
-                </Grid.Cell>
-              </Grid>
-            </Layout.Section>
-          </Layout>
-        </BlockStack>
-      </Page>
-      <Page
-        title="Funnels"
-        titleMetadata={
-          <InfoTooltip content="Here you can manipulate with your funnels" />
-        }
-        secondaryActions={<Button>Create a new funnel</Button>}
-      >
-        <BlockStack gap="800">
-          <Divider borderColor="border" borderWidth="025" />
-          <DataTable
-            columnContentTypes={["text", "text", "text", "numeric"]}
-            headings={["Funnel name", "Trigger", "Offer", "Discount", ""]}
-            rows={rows}
-            sortable={[true, true, true, true, false]}
-            pagination={{
-              hasNext: true,
-              onNext: () => {},
-              nextKeys: [39],
-              previousKeys: [37],
-            }}
-            defaultSortDirection="descending"
-            initialSortColumnIndex={0}
-            onSort={handleSort}
-            hoverable
-          />
-        </BlockStack>
-      </Page>
+                        <Box paddingBlockStart="200">
+                          <Text as="p" variant="bodyLg" fontWeight="bold">
+                            3
+                          </Text>
+                        </Box>
+                      </Card>
+                    </Grid.Cell>
+                  </Grid>
+                </Layout.Section>
+              </Layout>
+            </BlockStack>
+          </Page>
+          <Page
+            title="Funnels"
+            titleMetadata={
+              <InfoTooltip content="Here you can manipulate with your funnels" />
+            }
+            secondaryActions={<Button>Create a new funnel</Button>}
+          >
+            <BlockStack gap="800">
+              <Divider borderColor="border" borderWidth="025" />
+              <DataTable
+                columnContentTypes={["text", "text", "text", "numeric"]}
+                headings={["Funnel name", "Trigger", "Offer", "Discount", ""]}
+                rows={rows}
+                sortable={[true, true, true, true, false]}
+                pagination={{
+                  hasNext: true,
+                  onNext: () => {},
+                  nextKeys: [39],
+                  previousKeys: [37],
+                }}
+                defaultSortDirection="descending"
+                initialSortColumnIndex={0}
+                onSort={handleSort}
+                hoverable
+              />
+            </BlockStack>
+          </Page>
+          )
+        </>
+      )}
     </>
   );
 }
-
-const InfoTooltip: FC<{ content: string; style?: CSSProperties }> = ({
-  content = "",
-  style = {},
-}) => {
-  return (
-    <div style={{ ...style }}>
-      <Tooltip content={content}>
-        <Icon source={InfoIcon} tone="base" />
-      </Tooltip>
-    </div>
-  );
-};

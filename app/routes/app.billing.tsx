@@ -1,63 +1,63 @@
 import {
-  Box,
-  Card,
-  Layout,
-  Link,
-  List,
   Page,
-  Text,
-  BlockStack,
+  Card,
+  Select,
+  DatePicker,
+  Button,
+  Layout,
 } from "@shopify/polaris";
-import { TitleBar } from "@shopify/app-bridge-react";
+import React, { useState, useCallback } from "react";
 
-export default function AdditionalPage() {
+function BillingsPage() {
+  const [selectedDateRange, setSelectedDateRange] = useState({
+    start: new Date(),
+    end: new Date(),
+  });
+
+  const [selectedOption, setSelectedOption] = useState("monthly");
+
+  const handleDateRangeChange = useCallback(
+    (value: any) => setSelectedDateRange(value),
+    [],
+  );
+  const handleOptionChange = useCallback(
+    (value: any) => setSelectedOption(value),
+    [],
+  );
+
+  const options = [
+    { label: "Monthly", value: "monthly" },
+    { label: "Annually", value: "annually" },
+    { label: "Weekly", value: "weekly" },
+  ];
+
   return (
-    <Page>
-      <TitleBar title="Additional page" />
+    <Page title="Billings">
       <Layout>
         <Layout.Section>
           <Card>
-            <BlockStack gap="300">
-              <Text as="p" variant="bodyMd">
-                The app template comes with an additional page which
-                demonstrates how to create multiple pages within app navigation
-                using{" "}
-                <Link
-                  url="https://shopify.dev/docs/apps/tools/app-bridge"
-                  target="_blank"
-                  removeUnderline
-                >
-                  App Bridge
-                </Link>
-                .
-              </Text>
-              <Text as="p" variant="bodyMd">
-                To create your own page and have it show up in the app
-                navigation, add a page inside <Code>app/routes</Code>, and a
-                link to it in the <Code>&lt;NavMenu&gt;</Code> component found
-                in <Code>app/routes/app.jsx</Code>.
-              </Text>
-            </BlockStack>
+            <DatePicker
+              month={selectedDateRange.start.getMonth()}
+              year={selectedDateRange.start.getFullYear()}
+              onMonthChange={(month, year) => {}}
+              onChange={handleDateRangeChange}
+              selected={selectedDateRange}
+            />
           </Card>
         </Layout.Section>
-        <Layout.Section variant="oneThird">
+        <Layout.Section>
           <Card>
-            <BlockStack gap="200">
-              <Text as="h2" variant="headingMd">
-                Resources
-              </Text>
-              <List>
-                <List.Item>
-                  <Link
-                    url="https://shopify.dev/docs/apps/design-guidelines/navigation#app-nav"
-                    target="_blank"
-                    removeUnderline
-                  >
-                    App nav best practices
-                  </Link>
-                </List.Item>
-              </List>
-            </BlockStack>
+            <Select
+              label="Billing Period"
+              options={options}
+              onChange={handleOptionChange}
+              value={selectedOption}
+            />
+          </Card>
+        </Layout.Section>
+        <Layout.Section>
+          <Card>
+            <Button variant="primary">Submit</Button>
           </Card>
         </Layout.Section>
       </Layout>
@@ -65,19 +65,4 @@ export default function AdditionalPage() {
   );
 }
 
-function Code({ children }: { children: React.ReactNode }) {
-  return (
-    <Box
-      as="span"
-      padding="025"
-      paddingInlineStart="100"
-      paddingInlineEnd="100"
-      background="bg-surface-active"
-      borderWidth="025"
-      borderColor="border"
-      borderRadius="100"
-    >
-      <code>{children}</code>
-    </Box>
-  );
-}
+export default BillingsPage;
