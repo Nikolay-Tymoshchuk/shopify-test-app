@@ -28,17 +28,42 @@ export async function getFunnel(id: number, graphql: Function) {
   return supplementFunnel(funnel, graphql);
 }
 
-export async function getFunnels(shop: string, graphql: Function) {
+export async function getFunnels(
+  shop: string,
+  graphql: Function,
+  page: number = 1,
+  limit: number = 5,
+) {
+  const total = await db.funnel.count({
+    where: { shop },
+  });
+  const currentPage = page * limit > total ? Math.ceil(total / limit) : page;
+
   const funnels = await db.funnel.findMany({
     where: { shop },
     orderBy: { id: "desc" },
+    skip: (currentPage - 1) * limit,
+    take: limit,
   });
 
-  if (funnels.length === 0) return [];
-
-  return Promise.all(
+  if (funnels.length === 0) {
+    return {
+      data: [],
+      total,
+      page: currentPage,
+      limit,
+    };
+  }
+  const data = await Promise.all(
     funnels.map((funnel) => supplementFunnel(funnel, graphql)),
   );
+
+  return {
+    data,
+    total,
+    page: currentPage,
+    limit,
+  };
 }
 
 async function supplementFunnel(funnel: any, graphql: any) {
