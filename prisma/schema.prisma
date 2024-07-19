@@ -30,7 +30,6 @@ model Session {
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
 }
-
 model Funnel {
   id                    Int     @id @default(autoincrement())
   title                 String
@@ -38,9 +37,14 @@ model Funnel {
   triggerProductId      String
   triggerProductTitle   String
   triggerProductPrice   String
+  triggerProductImage   String?
   offerProductId        String
   offerProductTitle     String
   offerProductPrice     String
+  offerProductImage     String?
+  totalDiscount         Float?  @default(0)
+  totalRevenue          Float?  @default(0)
+  totalOrders           Int?    @default(0)
   discount              Float?   @default(0)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @default(now())

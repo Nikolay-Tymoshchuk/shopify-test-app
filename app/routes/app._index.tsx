@@ -2,7 +2,7 @@ import type { CSSProperties, FC } from "react";
 import { useCallback, useState } from "react";
 
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 // import { useFetcher } from "@remix-run/react";
 import type { TableData } from "@shopify/polaris";
 import {
@@ -24,8 +24,9 @@ import {
 } from "@shopify/polaris";
 import { authenticate } from "../shopify.server";
 import { DeleteIcon, EditIcon, InfoIcon } from "@shopify/polaris-icons";
-import { useLoaderData, useNavigate } from "@remix-run/react";
-import { getFunnels } from "~/models/Funnel.server";
+import { useLoaderData, useNavigate, useSubmit } from "@remix-run/react";
+import { getFunnels } from "../models/Funnel.server";
+// import db from "../db.server";
 
 interface EmptyQRCodeStateProps {
   onAction: () => void;
@@ -39,6 +40,13 @@ export const loader = async ({ request }: { request: LoaderFunctionArgs }) => {
     funnels,
   });
 };
+
+// export async function handleDelete(id) {
+//   const { session } = await authenticate.admin(id);
+
+//   await db.funnel.delete({ where: { id: Number(id) } });
+
+// }
 
 const InfoTooltip: FC<{ content: string; style?: CSSProperties }> = ({
   content = "",
@@ -69,6 +77,7 @@ const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({ onAction }) => (
 export default function Index() {
   const { funnels } = useLoaderData() as any;
   const navigate = useNavigate();
+  const submit = useSubmit();
 
   const [sortedRows, setSortedRows] = useState<TableData[][] | null>(null);
   const [activeId, setActiveId] = useState("");
@@ -140,7 +149,6 @@ export default function Index() {
         onClose={() => toggleActive(id)}
         key={id}
         preferredAlignment="left"
-        fullWidth
       >
         <ActionList
           actionRole="menuitem"
@@ -148,11 +156,21 @@ export default function Index() {
             {
               title: "File options",
               items: [
-                { content: "Edit funnel", icon: EditIcon },
+                {
+                  content: "Edit funnel",
+                  icon: EditIcon,
+                  onAction: () => {
+                    console.log("id", id);
+                    navigate(`settings/${id}`);
+                  },
+                },
                 {
                   destructive: true,
                   content: "Delete funnel",
                   icon: DeleteIcon,
+                  onAction: () => {
+                    document.getElementById("my-modal").show();
+                  },
                 },
               ],
             },
@@ -162,43 +180,13 @@ export default function Index() {
     );
   };
 
-  const initiallySortedRows: TableData[][] = [
-    [
-      "First",
-      "First trigger",
-      "First offer",
-      0,
-      <Drop id="first" key="first" />,
-    ],
-    [
-      "Second",
-      "Second trigger",
-      "Second offer",
-      10,
-      <Drop id="second" key="second" />,
-    ],
-    [
-      "Third",
-      "Third trigger",
-      "Third offer",
-      20,
-      <Drop id="third" key="third" />,
-    ],
-    [
-      "Fourth",
-      "Fourth trigger",
-      "Fourth offer",
-      30,
-      <Drop id="fourth" key="fourth" />,
-    ],
-    [
-      "Fifth",
-      "Fifth trigger",
-      "Fifth offer",
-      40,
-      <Drop id="fifth" key="fifth" />,
-    ],
-  ];
+  const initiallySortedRows: TableData[][] = funnels.map((funnel: any) => [
+    funnel.title,
+    funnel.triggerProductTitle,
+    funnel.offerProductTitle,
+    funnel.discount,
+    <Drop id={funnel.id} key={funnel.id + funnel.name} />,
+  ]);
 
   function sortCurrency(
     rows: TableData[][],
@@ -235,7 +223,6 @@ export default function Index() {
         <EmptyQRCodeState onAction={() => navigate("settings/new")} />
       ) : (
         <>
-          (
           <Page
             title="Dashboard"
             titleMetadata={
@@ -312,7 +299,11 @@ export default function Index() {
             titleMetadata={
               <InfoTooltip content="Here you can manipulate with your funnels" />
             }
-            secondaryActions={<Button>Create a new funnel</Button>}
+            secondaryActions={
+              <Button onClick={() => navigate("settings/new")}>
+                Create a new funnel
+              </Button>
+            }
           >
             <BlockStack gap="800">
               <Divider borderColor="border" borderWidth="025" />
@@ -334,7 +325,30 @@ export default function Index() {
               />
             </BlockStack>
           </Page>
-          )
+          <ui-modal id="my-modal">
+            <Box paddingBlock="1000" paddingInlineStart="400">
+              <Text as="p" variant="bodyLg">
+                Are you sure you want to delete{" "}
+                <b>{`${funnels?.find((funnel: any) => funnel.id === activeId)?.title}`}</b>
+              </Text>
+            </Box>
+            <ui-title-bar title={"Delete funnel"}>
+              <button
+                variant="primary"
+                tone="critical"
+                onClick={async () =>
+                  submit({ action: "delete" }, { method: "post" })
+                }
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => document.getElementById("my-modal").hide()}
+              >
+                Cancel
+              </button>
+            </ui-title-bar>
+          </ui-modal>
         </>
       )}
     </>

@@ -1,47 +1,32 @@
-import { useState, useCallback, useEffect } from "react";
 import { json, redirect } from "@remix-run/node";
+import { useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
 import {
-  useActionData,
-  useLoaderData,
-  useNavigation,
-  useSubmit,
-  useNavigate,
-} from "@remix-run/react";
-import { authenticate } from "../shopify.server";
-import {
-  Card,
-  Bleed,
+  BlockStack,
   Button,
-  ChoiceList,
+  Card,
   Divider,
-  EmptyState,
-  InlineStack,
-  InlineError,
+  FormLayout,
+  Grid,
   Layout,
   Page,
+  PageActions,
   Text,
   TextField,
   Thumbnail,
-  BlockStack,
-  PageActions,
-  LegacyStack,
-  FormLayout,
-  Box,
-  InlineGrid,
-  Grid,
-  Select,
 } from "@shopify/polaris";
 import { ImageIcon } from "@shopify/polaris-icons";
+import { useCallback, useEffect, useState } from "react";
 
 import db from "../db.server";
 import { getFunnel, validateFunnel } from "../models/Funnel.server";
+import { authenticate } from "../shopify.server";
 
 export async function loader({ request, params }) {
   const { admin } = await authenticate.admin(request);
 
   if (params.id === "new") {
     return json({
-      destination: "product",
+      destination: "funnel",
       title: "",
     });
   }
@@ -59,6 +44,8 @@ export async function action({ request, params }) {
     shop,
   };
 
+  data.discount = Number(data.discount);
+
   if (data.action === "delete") {
     await db.funnel.delete({ where: { id: Number(params.id) } });
     return redirect("/app");
@@ -75,13 +62,14 @@ export async function action({ request, params }) {
       ? await db.funnel.create({ data })
       : await db.funnel.update({ where: { id: Number(params.id) }, data });
 
-  return redirect(`/app/qrcodes/${funnel.id}`);
+  return redirect(`/app/settings/${funnel.id}`);
 }
 
-export default function QRCodeForm() {
-  const errors = useActionData()?.errors || {};
-  const [titleValue, setTitleValue] = useState("");
-  const [discountValue, setDiscountValue] = useState(0);
+export default function FunnelsForm() {
+  const funnel = useLoaderData();
+  // const errors = useActionData()?.errors || {};
+  const [titleValue, setTitleValue] = useState(funnel.title || "");
+  const [discountValue, setDiscountValue] = useState(funnel.discount || 0);
 
   const handleTitleChange = useCallback(
     (newValue) => setTitleValue(newValue),
@@ -93,7 +81,6 @@ export default function QRCodeForm() {
     [],
   );
 
-  const funnel = useLoaderData();
   const [formState, setFormState] = useState(funnel);
   const [cleanFormState, setCleanFormState] = useState(funnel);
   const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
@@ -103,8 +90,6 @@ export default function QRCodeForm() {
     nav.state === "submitting" && nav.formData?.get("action") !== "delete";
   const isDeleting =
     nav.state === "submitting" && nav.formData?.get("action") === "delete";
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -118,6 +103,19 @@ export default function QRCodeForm() {
       clearTimeout(handler);
     };
   }, [titleValue]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setFormState({
+        ...formState,
+        discount: discountValue,
+      });
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [discountValue]);
 
   async function selectProduct(e) {
     const isOfferProduct = e.target.closest("button").id === "offer-product";
@@ -135,6 +133,8 @@ export default function QRCodeForm() {
         variants: [{ price }],
         images: [image],
       } = products[0];
+
+      console.log("products[0]============>", products[0]);
 
       isOfferProduct
         ? setFormState({
@@ -179,10 +179,13 @@ export default function QRCodeForm() {
   function handleSave() {
     const data = {
       title: formState.title,
-      productId: formState.productId || "",
-      productVariantId: formState.productVariantId || "",
-      productHandle: formState.productHandle || "",
-      destination: formState.destination,
+      triggerProductTitle: formState.triggerProductTitle || "",
+      triggerProductId: formState.triggerProductId || "",
+      triggerProductPrice: formState.triggerProductPrice || "",
+      offerProductId: formState.offerProductId || "",
+      offerProductTitle: formState.offerProductTitle || "",
+      offerProductPrice: formState.offerProductPrice || "",
+      discount: formState.discount || 0,
     };
 
     setCleanFormState({ ...formState });
@@ -206,6 +209,7 @@ export default function QRCodeForm() {
                   xl: "40px",
                 }}
               >
+                {/* LABEL: NAME block */}
                 <Grid.Cell columnSpan={{ md: 2, lg: 2, xl: 2 }}>
                   <BlockStack gap="200">
                     <Text as="h2" fontWeight="medium" variant="headingLg">
@@ -227,6 +231,7 @@ export default function QRCodeForm() {
                     />
                   </Card>
                 </Grid.Cell>
+                {/* LABEL: TRIGGER block */}
                 <Grid.Cell columnSpan={{ md: 2, lg: 2, xl: 2 }}>
                   <BlockStack gap="200">
                     <Text as="h2" fontWeight="medium" variant="headingLg">
@@ -297,6 +302,7 @@ export default function QRCodeForm() {
                     </Card>
                   )}
                 </Grid.Cell>
+                {/* LABEL: OFFER block */}
                 <Grid.Cell columnSpan={{ md: 2, lg: 2, xl: 2 }}>
                   <BlockStack gap="200">
                     <Text as="h2" fontWeight="medium" variant="headingLg">
@@ -367,6 +373,7 @@ export default function QRCodeForm() {
                     </Card>
                   )}
                 </Grid.Cell>
+                {/* LABEL: DISCOUNT block */}
                 <Grid.Cell columnSpan={{ md: 2, lg: 2, xl: 2 }}>
                   <BlockStack gap="200">
                     <Text as="h2" fontWeight="medium" variant="headingLg">

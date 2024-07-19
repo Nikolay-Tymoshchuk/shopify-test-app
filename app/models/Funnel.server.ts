@@ -53,6 +53,11 @@ async function supplementFunnel(funnel: any, graphql: any) {
               price
             }
           }
+          images(first: 1) {
+            nodes {
+              url
+            }
+          }
         }
         offerProduct: product(id: $offerProductId) {
           id
@@ -60,6 +65,11 @@ async function supplementFunnel(funnel: any, graphql: any) {
           price: variants(first: 1) {
             nodes {
               price
+            }
+          }
+          images(first: 1) {
+            nodes {
+              url
             }
           }
         }
@@ -80,13 +90,16 @@ async function supplementFunnel(funnel: any, graphql: any) {
     triggerProductId: data.triggerProduct.id,
     triggerProductPrice: data.triggerProduct.price.nodes[0]?.price,
     triggerProductTitle: data.triggerProduct.title,
+    triggerProductImage: data.triggerProduct.images.nodes[0]?.url,
     offerProductTitle: data.offerProduct.title,
     offerProductId: data.offerProduct.id,
     offerProductPrice: data.offerProduct.price.nodes[0]?.price,
+    offerProductImage: data.offerProduct.images.nodes[0]?.url,
   };
 }
 
 export function validateFunnel(data: Funnel) {
+  console.log("DATA", data);
   const errors = {} as Partial<Funnel>;
 
   if (!data.title) {

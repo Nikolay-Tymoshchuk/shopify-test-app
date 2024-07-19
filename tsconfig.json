@@ -3,7 +3,8 @@
     "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "app/routes/app.settings_.$id.jsx"
+    "app/routes/app.settings_.$id.jsx",
+    "app/routes/app._index.jsx"
   ],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],

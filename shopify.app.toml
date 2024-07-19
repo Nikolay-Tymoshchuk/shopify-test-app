@@ -3,22 +3,23 @@
 client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
 name = "SimplePost"
 handle = "app-1087"
-application_url = "https://orders-standing-stays-fountain.trycloudflare.com"
+application_url = "https://partly-chain-formed-prague.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
 dev_store_url = "niko-wonderwork.myshopify.com"
+include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "read_product_listings,read_products,read_script_tags,read_themes,write_product_listings,write_products,write_script_tags,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://orders-standing-stays-fountain.trycloudflare.com/auth/callback",
-  "https://orders-standing-stays-fountain.trycloudflare.com/auth/shopify/callback",
-  "https://orders-standing-stays-fountain.trycloudflare.com/api/auth/callback"
+  "https://partly-chain-formed-prague.trycloudflare.com/auth/callback",
+  "https://partly-chain-formed-prague.trycloudflare.com/auth/shopify/callback",
+  "https://partly-chain-formed-prague.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
