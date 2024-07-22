@@ -3,7 +3,7 @@
 client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
 name = "SimplePost"
 handle = "app-1087"
-application_url = "https://auctions-apparent-cleaner-cordless.trycloudflare.com"
+application_url = "https://promotions-exams-franklin-fat.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_product_listings,read_products,read_script_tags,read_themes,write
 
 [auth]
 redirect_urls = [
-  "https://auctions-apparent-cleaner-cordless.trycloudflare.com/auth/callback",
-  "https://auctions-apparent-cleaner-cordless.trycloudflare.com/auth/shopify/callback",
-  "https://auctions-apparent-cleaner-cordless.trycloudflare.com/api/auth/callback"
+  "https://promotions-exams-franklin-fat.trycloudflare.com/auth/callback",
+  "https://promotions-exams-franklin-fat.trycloudflare.com/auth/shopify/callback",
+  "https://promotions-exams-franklin-fat.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
