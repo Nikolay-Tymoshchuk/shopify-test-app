@@ -1,29 +1,14 @@
+import { BlockStack, Button, CalloutBanner, extend, Heading, Image, Layout, render, Separator, Text, TextBlock, TextContainer, Tiles, useExtensionInput } from "@shopify/post-purchase-ui-extensions-react";
 import { useEffect, useState } from "react";
-import {
-  extend,
-  render,
-  useExtensionInput,
-  BlockStack,
-  Button,
-  CalloutBanner,
-  Heading,
-  Image,
-  Text,
-  TextContainer,
-  Separator,
-  Tiles,
-  TextBlock,
-  Layout,
-} from "@shopify/post-purchase-ui-extensions-react";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://clause-niger-samples-locale.trycloudflare.com";
+const APP_URL = "https://mixed-expenditure-ran-maximum.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
   async ({ inputData, storage }) => {
-    const postPurchaseOffer = await fetch(`${APP_URL}/api/funnel`, {
+    const postPurchaseFunnel = await fetch(`${APP_URL}/api/offer`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${inputData.token}`,
@@ -34,7 +19,9 @@ extend(
       }),
     }).then((response) => response.json());
 
-    await storage.update(postPurchaseOffer);
+    console.log("postPurchaseFunnel===========>", postPurchaseFunnel);
+
+    await storage.update(postPurchaseFunnel);
 
     // For local development, always show the post-purchase page
     return { render: true };
@@ -49,26 +36,20 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [calculatedPurchase, setCalculatedPurchase] = useState();
 
-  const { funnels } = storage.initialData;
+  console.log("storage=========>", storage);
+  console.log("inputData========>", inputData.initialPurchase.referenceId);
 
-  console.log("first", useExtensionInput());
-
-  const purchaseOption = funnels[0];
+  const { funnel: purchaseOption } = storage.initialData;
 
   console.log("purchaseOption", purchaseOption);
 
-  console.log("calculatedPurchase=>", calculatedPurchase);
-
-  // // Define the changes that you want to make to the purchase, including the discount to the product.
   useEffect(() => {
     async function calculatePurchase() {
-      // Call Shopify to calculate the new price of the purchase, if the above changes are applied.
       const result = await calculateChangeset({
         changes: purchaseOption.changes,
       });
 
-      console.log("result=>", result);
-
+      console.log("calculatedPurchaseResult", result);
       setCalculatedPurchase(result.calculatedPurchase);
       setLoading(false);
     }
@@ -89,59 +70,47 @@ export function App() {
   const originalPrice =
     calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney.amount;
 
-  console.log("shipping", shipping);
-  console.log("taxes", taxes);
-  console.log("total", total);
-  console.log("discountedPrice", discountedPrice);
-  console.log("originalPrice", originalPrice);
+  console.log("calculatedPurchase", calculatedPurchase);
 
-  // async function acceptOffer() {
-  //   setLoading(true);
+  async function acceptFunnel() {
+    console.log("funnels storage=========>", storage);
+    setLoading(true);
 
-  //   // Make a request to your app server to sign the changeset with your app's API secret key.
-  //   const token = await fetch(`${APP_URL}/api/sign-changeset`, {
-  //     method: "POST",
-  //     headers: {
-  //       Authorization: `Bearer ${inputData.token}`,
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       referenceId: inputData.initialPurchase.referenceId,
-  //       changes: purchaseOption.id,
-  //     }),
-  //   })
-  //     .then((response) => response.json())
-  //     .then((response) => response.token)
-  //     .catch((e) => console.log(e));
+    // Make a request to your app server to sign the changeset with your app's API secret key.
+    const token = await fetch(`${APP_URL}/api/sign-changeset`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${inputData.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        referenceId: inputData.initialPurchase.referenceId,
+        changes: purchaseOption.id,
+        storage: storage,
+      }),
+    })
+      .then((response) => response.json())
+      .then((response) => response.token)
+      .catch((e) => console.log(e));
 
-  //   // Make a request to Shopify servers to apply the changeset.
-  //   await applyChangeset(token);
+    await applyChangeset(token);
+    console.log("applyChangeset token", token);
+    done();
+  }
 
-  //   // Redirect to the thank-you page.
-  //   done();
-  // }
-
-  // function declineOffer() {
-  //   setLoading(true);
-  //   // Redirect to the thank-you page
-  //   done();
-  // }
+  function declineFunnel() {
+    setLoading(true);
+    // Redirect to the thank-you page
+    done();
+  }
 
   return (
     <BlockStack spacing="loose">
-      <CalloutBanner>
-        <BlockStack spacing="tight">
+      <CalloutBanner background="transparent" border="none" spacing="loose">
+        <BlockStack spacing="loose">
           <TextContainer>
-            <Text size="medium" emphasized>
-              It&#39;s not too late to add this to your order
-            </Text>
-          </TextContainer>
-          <TextContainer>
-            <Text size="medium">
-              Add the {purchaseOption.productTitle} to your order and{" "}
-            </Text>
-            <Text size="medium" emphasized>
-              {purchaseOption.changes[0].discount.title}
+            <Text size="xlarge" emphasized>
+              {`We have offer for you with ${purchaseOption.discount}% discount`}
             </Text>
           </TextContainer>
         </BlockStack>
@@ -155,7 +124,7 @@ export function App() {
       >
         <Image
           description="product photo"
-          source={purchaseOption.productImageURL}
+          source={purchaseOption.productImageUrl}
         />
         <BlockStack />
         <BlockStack>
@@ -165,7 +134,9 @@ export function App() {
             originalPrice={originalPrice}
             loading={!calculatedPurchase}
           />
-          <ProductDescription textLines={purchaseOption.productDescription} />
+          <BlockStack spacing="xtight">
+            <TextBlock subdued>{purchaseOption.description}</TextBlock>
+          </BlockStack>
           <BlockStack spacing="tight">
             <Separator />
             <MoneyLine
@@ -187,10 +158,10 @@ export function App() {
             <MoneySummary label="Total" amount={total} />
           </BlockStack>
           <BlockStack>
-            <Button onPress={acceptOffer} submit loading={loading}>
+            <Button onPress={acceptFunnel} submit loading={loading}>
               Pay now · {formatCurrency(total)}
             </Button>
-            <Button onPress={declineOffer} subdued loading={loading}>
+            <Button onPress={declineFunnel} subdued loading={loading}>
               Decline this offer
             </Button>
           </BlockStack>
@@ -211,18 +182,6 @@ function PriceHeader({ discountedPrice, originalPrice, loading }) {
         {!loading && formatCurrency(discountedPrice)}
       </Text>
     </TextContainer>
-  );
-}
-
-function ProductDescription({ textLines }) {
-  return (
-    <BlockStack spacing="xtight">
-      {textLines.map((text, index) => (
-        <TextBlock key={index} subdued>
-          {text}
-        </TextBlock>
-      ))}
-    </BlockStack>
   );
 }
 

@@ -18,20 +18,31 @@ import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback, useEffect, useState } from "react";
 
 import db from "../db.server";
-import { getFunnel, validateFunnel } from "../models/Funnel.server";
+import {
+  getFunnel,
+  validateFunnel,
+  getAllFunnelsTriggerProductsIds,
+} from "../models/Funnel.server";
 import { authenticate } from "../shopify.server";
 
 export async function loader({ request, params }) {
   const { admin } = await authenticate.admin(request);
 
+  const triggeredIds = await getAllFunnelsTriggerProductsIds();
+
   if (params.id === "new") {
     return json({
       destination: "funnel",
       title: "",
+      triggeredIds,
     });
   }
+  const funnel = await getFunnel(Number(params.id), admin.graphql);
 
-  return json(await getFunnel(Number(params.id), admin.graphql));
+  return json({
+    ...funnel,
+    triggeredIds,
+  });
 }
 
 export async function action({ request, params }) {
@@ -66,8 +77,7 @@ export async function action({ request, params }) {
 }
 
 export default function FunnelsForm() {
-  const funnel = useLoaderData();
-  // const errors = useActionData()?.errors || {};
+  const { triggeredIds, ...funnel } = useLoaderData();
   const [titleValue, setTitleValue] = useState(funnel.title || "");
   const [discountValue, setDiscountValue] = useState(funnel.discount || 0);
 
@@ -124,6 +134,9 @@ export default function FunnelsForm() {
       type: "product",
       action: "select",
       multiple: false,
+      filter: {
+        query: `NOT id:${triggeredIds.join(" AND NOT id:")}`,
+      },
     });
 
     if (products) {
@@ -133,8 +146,6 @@ export default function FunnelsForm() {
         variants: [{ price }],
         images: [image],
       } = products[0];
-
-      console.log("products[0]============>", products[0]);
 
       isOfferProduct
         ? setFormState({

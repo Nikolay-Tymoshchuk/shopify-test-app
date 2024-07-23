@@ -45,7 +45,7 @@ interface EmptyQRCodeStateProps {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const page = Number(url.searchParams.get("page")) || 1;
-  const limit = Number(url.searchParams.get("limit")) || 2;
+  const limit = Number(url.searchParams.get("limit")) || 5;
 
   const { admin, session } = await authenticate.admin(request as any);
   const {
@@ -118,13 +118,15 @@ function MyModal({ funnels, activeId }) {
     }
   }, [fetcher.data]);
 
+  console.log("funnels", funnels);
+
   return (
     <ui-modal id="my-modal">
       <Box paddingBlock="1000" paddingInlineStart="400">
         {activeId && fetcher.state === "idle" ? (
           <Text as="p" variant="bodyLg">
             Are you sure you want to delete{" "}
-            <b>{`${funnels.data?.find((funnel: any) => funnel.id === activeId)?.title}`}</b>
+            <b>{`${funnels?.find((funnel: any) => funnel.id === activeId)?.title}`}</b>
           </Text>
         ) : (
           <Spinner accessibilityLabel="Spinner example" size="small" />
@@ -425,7 +427,8 @@ export default function Index() {
                     onNext={handleNext}
                     nextKeys={[39]}
                     previousKeys={[37]}
-                    label={`Showing ${funnels?.length} of ${total} funnels`}
+                    // label={`Showing ${funnels?.length} of ${total} funnels`}
+                    label={`Showing ${page * limit - limit + 1} to ${page * limit < total ? page * limit : total} of ${total} funnels`}
                   />
                 </div>
               </div>
