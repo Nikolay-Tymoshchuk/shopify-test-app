@@ -1,13 +1,30 @@
-import { BlockStack, Button, CalloutBanner, extend, Heading, Image, Layout, render, Separator, Text, TextBlock, TextContainer, Tiles, useExtensionInput } from "@shopify/post-purchase-ui-extensions-react";
+import {
+  BlockStack,
+  Button,
+  CalloutBanner,
+  extend,
+  Heading,
+  Image,
+  Layout,
+  render,
+  Separator,
+  Text,
+  TextBlock,
+  TextContainer,
+  Tiles,
+  useExtensionInput,
+} from "@shopify/post-purchase-ui-extensions-react";
 import { useEffect, useState } from "react";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://mixed-expenditure-ran-maximum.trycloudflare.com";
+const APP_URL = "https://preferences-tenant-washing-boxing.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
   async ({ inputData, storage }) => {
+    console.log("extend inputData==========>", inputData);
+    console.log("extend storage==========>", storage);
     const postPurchaseFunnel = await fetch(`${APP_URL}/api/offer`, {
       method: "POST",
       headers: {
@@ -23,7 +40,6 @@ extend(
 
     await storage.update(postPurchaseFunnel);
 
-    // For local development, always show the post-purchase page
     return { render: true };
   },
 );
@@ -39,7 +55,7 @@ export function App() {
   console.log("storage=========>", storage);
   console.log("inputData========>", inputData.initialPurchase.referenceId);
 
-  const { funnel: purchaseOption } = storage.initialData;
+  const { offer: purchaseOption } = storage.initialData;
 
   console.log("purchaseOption", purchaseOption);
 
@@ -73,7 +89,6 @@ export function App() {
   console.log("calculatedPurchase", calculatedPurchase);
 
   async function acceptFunnel() {
-    console.log("funnels storage=========>", storage);
     setLoading(true);
 
     // Make a request to your app server to sign the changeset with your app's API secret key.
@@ -94,7 +109,6 @@ export function App() {
       .catch((e) => console.log(e));
 
     await applyChangeset(token);
-    console.log("applyChangeset token", token);
     done();
   }
 

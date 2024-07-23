@@ -2,7 +2,6 @@ import { json } from "@remix-run/node";
 import jwt from "jsonwebtoken";
 import { v4 as uuidv4 } from "uuid";
 
-import { getFunnelInfo } from "../models/Funnel.server";
 import { authenticate } from "../shopify.server";
 
 // The loader responds to preflight requests from Shopify
@@ -14,11 +13,8 @@ export const action = async ({ request }) => {
   const { cors } = await authenticate.public.checkout(request);
 
   const body = await request.json();
-  console.log("body=============>", body);
 
-  const selectedFunnel = await getFunnelInfo(body.changes);
-
-  console.log("selectedFunnel==============>", selectedFunnel);
+  const selectedFunnel = body?.storage?.initialData?.offer;
 
   const payload = {
     iss: process.env.SHOPIFY_API_KEY,
@@ -27,8 +23,6 @@ export const action = async ({ request }) => {
     sub: body.referenceId,
     changes: selectedFunnel?.changes,
   };
-
-  console.log("payload=============>", payload);
 
   const token = jwt.sign(payload, process.env.SHOPIFY_API_SECRET);
   return cors(json({ token }));

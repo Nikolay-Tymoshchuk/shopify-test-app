@@ -118,8 +118,6 @@ function MyModal({ funnels, activeId }) {
     }
   }, [fetcher.data]);
 
-  console.log("funnels", funnels);
-
   return (
     <ui-modal id="my-modal">
       <Box paddingBlock="1000" paddingInlineStart="400">
