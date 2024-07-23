@@ -3,7 +3,7 @@
 client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
 name = "SimplePost"
 handle = "app-1087"
-application_url = "https://terrain-polished-autos-side.trycloudflare.com"
+application_url = "https://mixed-expenditure-ran-maximum.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "read_product_listings,read_products,read_script_tags,read_themes,write
 
 [auth]
 redirect_urls = [
-  "https://terrain-polished-autos-side.trycloudflare.com/auth/callback",
-  "https://terrain-polished-autos-side.trycloudflare.com/auth/shopify/callback",
-  "https://terrain-polished-autos-side.trycloudflare.com/api/auth/callback"
+  "https://mixed-expenditure-ran-maximum.trycloudflare.com/auth/callback",
+  "https://mixed-expenditure-ran-maximum.trycloudflare.com/auth/shopify/callback",
+  "https://mixed-expenditure-ran-maximum.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -37,6 +37,16 @@ export async function getFunnels(
   const total = await db.funnel.count({
     where: { shop },
   });
+
+  if (total === 0) {
+    return {
+      data: [],
+      total,
+      page,
+      limit,
+    };
+  }
+
   const currentPage = page * limit > total ? Math.ceil(total / limit) : page;
 
   const funnels = await db.funnel.findMany({
@@ -64,6 +74,19 @@ export async function getFunnels(
     page: currentPage,
     limit,
   };
+}
+
+export async function getAllFunnels(shop: string) {
+  const funnels = await db.funnel.findMany({
+    where: { shop },
+    orderBy: { id: "desc" },
+  });
+
+  if (funnels.length === 0) {
+    return [];
+  }
+  console.log("funnels====================>", funnels);
+  return funnels;
 }
 
 async function supplementFunnel(funnel: any, graphql: any) {

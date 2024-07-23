@@ -17,13 +17,13 @@ import {
 } from "@shopify/post-purchase-ui-extensions-react";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://flame-soup-astronomy-accurate.trycloudflare.com";
+const APP_URL = "https://clause-niger-samples-locale.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
   async ({ inputData, storage }) => {
-    const postPurchaseOffer = await fetch(`${APP_URL}/api/offer`, {
+    const postPurchaseOffer = await fetch(`${APP_URL}/api/funnel`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${inputData.token}`,
@@ -49,17 +49,25 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [calculatedPurchase, setCalculatedPurchase] = useState();
 
-  const { offers } = storage.initialData;
+  const { funnels } = storage.initialData;
 
-  const purchaseOption = offers[0];
+  console.log("first", useExtensionInput());
 
-  // Define the changes that you want to make to the purchase, including the discount to the product.
+  const purchaseOption = funnels[0];
+
+  console.log("purchaseOption", purchaseOption);
+
+  console.log("calculatedPurchase=>", calculatedPurchase);
+
+  // // Define the changes that you want to make to the purchase, including the discount to the product.
   useEffect(() => {
     async function calculatePurchase() {
       // Call Shopify to calculate the new price of the purchase, if the above changes are applied.
       const result = await calculateChangeset({
         changes: purchaseOption.changes,
       });
+
+      console.log("result=>", result);
 
       setCalculatedPurchase(result.calculatedPurchase);
       setLoading(false);
@@ -81,37 +89,43 @@ export function App() {
   const originalPrice =
     calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney.amount;
 
-  async function acceptOffer() {
-    setLoading(true);
+  console.log("shipping", shipping);
+  console.log("taxes", taxes);
+  console.log("total", total);
+  console.log("discountedPrice", discountedPrice);
+  console.log("originalPrice", originalPrice);
 
-    // Make a request to your app server to sign the changeset with your app's API secret key.
-    const token = await fetch(`${APP_URL}/api/sign-changeset`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${inputData.token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        referenceId: inputData.initialPurchase.referenceId,
-        changes: purchaseOption.id,
-      }),
-    })
-      .then((response) => response.json())
-      .then((response) => response.token)
-      .catch((e) => console.log(e));
+  // async function acceptOffer() {
+  //   setLoading(true);
 
-    // Make a request to Shopify servers to apply the changeset.
-    await applyChangeset(token);
+  //   // Make a request to your app server to sign the changeset with your app's API secret key.
+  //   const token = await fetch(`${APP_URL}/api/sign-changeset`, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: `Bearer ${inputData.token}`,
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       referenceId: inputData.initialPurchase.referenceId,
+  //       changes: purchaseOption.id,
+  //     }),
+  //   })
+  //     .then((response) => response.json())
+  //     .then((response) => response.token)
+  //     .catch((e) => console.log(e));
 
-    // Redirect to the thank-you page.
-    done();
-  }
+  //   // Make a request to Shopify servers to apply the changeset.
+  //   await applyChangeset(token);
 
-  function declineOffer() {
-    setLoading(true);
-    // Redirect to the thank-you page
-    done();
-  }
+  //   // Redirect to the thank-you page.
+  //   done();
+  // }
+
+  // function declineOffer() {
+  //   setLoading(true);
+  //   // Redirect to the thank-you page
+  //   done();
+  // }
 
   return (
     <BlockStack spacing="loose">
