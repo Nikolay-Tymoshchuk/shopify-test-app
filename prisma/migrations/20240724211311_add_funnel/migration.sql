@@ -1,0 +1,10 @@
+-- CreateTable
+CREATE TABLE "Statistic" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "shop" TEXT NOT NULL,
+    "funnelId" INTEGER NOT NULL,
+    "revenue" REAL NOT NULL,
+    "discount" REAL NOT NULL,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

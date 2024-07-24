@@ -7,24 +7,26 @@ import {
   Image,
   Layout,
   render,
+  Select,
   Separator,
   Text,
+  TextField,
   TextBlock,
   TextContainer,
   Tiles,
   useExtensionInput,
+  InlineStack,
+  Bookend,
 } from "@shopify/post-purchase-ui-extensions-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://preferences-tenant-washing-boxing.trycloudflare.com";
+const APP_URL = "https://travels-eyes-nickname-poems.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
   async ({ inputData, storage }) => {
-    console.log("extend inputData==========>", inputData);
-    console.log("extend storage==========>", storage);
     const postPurchaseFunnel = await fetch(`${APP_URL}/api/offer`, {
       method: "POST",
       headers: {
@@ -35,8 +37,6 @@ extend(
         referenceId: inputData.initialPurchase.referenceId,
       }),
     }).then((response) => response.json());
-
-    console.log("postPurchaseFunnel===========>", postPurchaseFunnel);
 
     await storage.update(postPurchaseFunnel);
 
@@ -52,28 +52,103 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [calculatedPurchase, setCalculatedPurchase] = useState();
 
-  console.log("storage=========>", storage);
-  console.log("inputData========>", inputData.initialPurchase.referenceId);
-
   const { offer: purchaseOption } = storage.initialData;
 
-  console.log("purchaseOption", purchaseOption);
+  const [options, setOptions] = useState({
+    quantity: purchaseOption.changes[0]?.quantity || 1,
+    variantId: purchaseOption.variants[0].id,
+    variantTitle: purchaseOption.variants[0].title,
+    imageSrc:
+      purchaseOption.productImageUrl ||
+      purchaseOption.variants[0].image.url ||
+      "",
+    altText: purchaseOption.variants[0].image.altText || "",
+    maxQuantity: purchaseOption.variants[0].inventoryQuantity || undefined,
+    mainTitle: purchaseOption.productTitle,
+  });
+
+  const handleSelectChange = useCallback(
+    (value) => {
+      const {
+        id,
+        title,
+        image: { url, altText },
+        displayName,
+        inventoryQuantity,
+      } = purchaseOption.variants.find((variant) => variant.id === value);
+
+      setOptions({
+        ...options,
+        variantId: id,
+        variantTitle: title,
+        imageSrc: url,
+        altText,
+        mainTitle: displayName,
+        maxQuantity: inventoryQuantity,
+      });
+    },
+    [options, purchaseOption.variants],
+  );
+
+  const isMoreThenOneImgOption = useMemo(() => {
+    const imageSetArray =
+      purchaseOption.variants?.map(({ image: { url, altText } }) => ({
+        url,
+        altText,
+      })) || [];
+    const isNecessarySlider = imageSetArray.length > 1;
+    const currentImageIndex = imageSetArray.findIndex(
+      ({ url }) => url === options.imageSrc,
+    );
+
+    const changeImage = (direction) => {
+      const newIndex =
+        (currentImageIndex + direction + imageSetArray.length) %
+        imageSetArray.length;
+      const { url: newImageSrc } = imageSetArray[newIndex];
+      const variantId = purchaseOption.variants.find(
+        ({ image }) => image.url === newImageSrc,
+      ).id;
+      handleSelectChange(variantId);
+    };
+
+    const onNextImage = () => changeImage(1);
+    const onPrevImage = () => changeImage(-1);
+
+    const onImageClick = (imageSrc) => {
+      const variantId = purchaseOption.variants.find(
+        ({ image }) => image.url === imageSrc,
+      ).id;
+      handleSelectChange(variantId);
+    };
+
+    return {
+      isNecessarySlider,
+      onNextImage,
+      onPrevImage,
+      imageSetArray,
+      onImageClick,
+    };
+  }, [handleSelectChange, options.imageSrc, purchaseOption.variants]);
 
   useEffect(() => {
     async function calculatePurchase() {
       const result = await calculateChangeset({
-        changes: purchaseOption.changes,
+        changes: [
+          {
+            ...purchaseOption.changes[0],
+            variantId: options.variantId,
+            quantity: options.quantity,
+          },
+        ],
       });
-
-      console.log("calculatedPurchaseResult", result);
       setCalculatedPurchase(result.calculatedPurchase);
       setLoading(false);
     }
 
     calculatePurchase();
-  }, [calculateChangeset, purchaseOption.changes]);
+  }, [calculateChangeset, purchaseOption.changes, options]);
 
-  // Extract values from the calculated purchase.
   const shipping =
     calculatedPurchase?.addedShippingLines[0]?.priceSet?.presentmentMoney
       ?.amount;
@@ -83,12 +158,12 @@ export function App() {
   const discountedPrice =
     calculatedPurchase?.updatedLineItems[0].totalPriceSet.presentmentMoney
       .amount;
-  const originalPrice =
-    calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney.amount;
+  const originalPrice = (
+    calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney.amount *
+    options.quantity
+  ).toFixed(2);
 
-  console.log("calculatedPurchase", calculatedPurchase);
-
-  async function acceptFunnel() {
+  async function acceptOrder() {
     setLoading(true);
 
     // Make a request to your app server to sign the changeset with your app's API secret key.
@@ -99,9 +174,14 @@ export function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        referenceId: inputData.initialPurchase.referenceId,
-        changes: purchaseOption.id,
-        storage: storage,
+        sub: inputData.initialPurchase.referenceId,
+        changes: [
+          {
+            ...purchaseOption.changes[0],
+            variantId: options.variantId,
+            quantity: options.quantity,
+          },
+        ],
       }),
     })
       .then((response) => response.json())
@@ -109,14 +189,34 @@ export function App() {
       .catch((e) => console.log(e));
 
     await applyChangeset(token);
+
+    const res = await fetch(`${APP_URL}/api/statistic-update`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${inputData.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        funnelId: purchaseOption.id,
+        revenue: Number(total),
+        discount: parseFloat((originalPrice - total).toFixed(2)),
+      }),
+    }).then((response) => response.json());
+
+    console.log("res", res);
+
     done();
   }
 
-  function declineFunnel() {
+  function declineOrder() {
     setLoading(true);
     // Redirect to the thank-you page
     done();
   }
+
+  const handleQuantityChange = (value) => {
+    setOptions({ ...options, quantity: Number(value) });
+  };
 
   return (
     <BlockStack spacing="loose">
@@ -136,18 +236,69 @@ export function App() {
           { viewportSize: "large", sizes: [560, 38, 340] },
         ]}
       >
-        <Image
-          description="product photo"
-          source={purchaseOption.productImageUrl}
-        />
+        <BlockStack>
+          <Image description="product photo" source={options.imageSrc} />
+          {isMoreThenOneImgOption.isNecessarySlider && (
+            <InlineStack>
+              <Button onPress={isMoreThenOneImgOption.onPrevImage} plain>
+                ⟨
+              </Button>
+              {isMoreThenOneImgOption.imageSetArray.map((image) => (
+                <Button
+                  onPress={() => isMoreThenOneImgOption.onImageClick(image.url)}
+                  plain
+                  key={image.url}
+                >
+                  <Image
+                    description={image.altText || "product photo"}
+                    source={image.url}
+                    bordered={options.imageSrc === image.url}
+                  />
+                </Button>
+              ))}
+              <Button onPress={isMoreThenOneImgOption.onNextImage} plain>
+                ⟩
+              </Button>
+            </InlineStack>
+          )}
+        </BlockStack>
         <BlockStack />
         <BlockStack>
-          <Heading>{purchaseOption.productTitle}</Heading>
+          <Heading level={2}>{options.mainTitle}</Heading>
           <PriceHeader
             discountedPrice={discountedPrice}
             originalPrice={originalPrice}
             loading={!calculatedPurchase}
           />
+          <Bookend leading alignment="leading" spacing="tight">
+            <TextField
+              label="Quantity"
+              type="number"
+              value={options.quantity}
+              onInput={handleQuantityChange}
+              tooltip={{
+                label: "Quantity",
+                content: `You can
+                purchase up to ${options.maxQuantity} of this item.`,
+              }}
+              error={
+                options.quantity > options.maxQuantity
+                  ? "Quantity exceeds available stock"
+                  : options.quantity < 1
+                    ? "Quantity must be at least 1"
+                    : undefined
+              }
+            />
+            <Select
+              label="Variant"
+              value={options.variantId}
+              onChange={handleSelectChange}
+              options={purchaseOption.variants.map((variant) => ({
+                value: variant.id,
+                label: variant.title,
+              }))}
+            />
+          </Bookend>
           <BlockStack spacing="xtight">
             <TextBlock subdued>{purchaseOption.description}</TextBlock>
           </BlockStack>
@@ -172,10 +323,10 @@ export function App() {
             <MoneySummary label="Total" amount={total} />
           </BlockStack>
           <BlockStack>
-            <Button onPress={acceptFunnel} submit loading={loading}>
+            <Button onPress={acceptOrder} submit loading={loading}>
               Pay now · {formatCurrency(total)}
             </Button>
-            <Button onPress={declineFunnel} subdued loading={loading}>
+            <Button onPress={declineOrder} subdued loading={loading}>
               Decline this offer
             </Button>
           </BlockStack>

@@ -2,7 +2,6 @@ import { json } from "@remix-run/node";
 
 import {
   getAllFunnelsTriggerProductsIds,
-  getFunnelByTriggerProductId,
   getOffer,
 } from "../models/Funnel.server";
 import { getSession } from "../models/Session.server";

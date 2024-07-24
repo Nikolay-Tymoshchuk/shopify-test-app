@@ -183,7 +183,6 @@ async function supplementFunnel(funnel: any, graphql: any) {
 }
 
 export function validateFunnel(data: Funnel) {
-  console.log("DATA", data);
   const errors = {} as Partial<Funnel>;
 
   if (!data.title) {
@@ -238,14 +237,8 @@ async function supplementPostPurchaseFunnel(
               url
             }
             title
-          }
-          edges {
-            node {
-              compareAtPrice
-              price
-              id
-              legacyResourceId
-            }
+            availableForSale
+            inventoryQuantity
           }
         }
         description(truncateAt: 200)
@@ -265,7 +258,7 @@ async function supplementPostPurchaseFunnel(
     data: { product },
   } = response;
 
-  const variantId = product.variants.edges[0].node.id.split("/")[4];
+  const variantId = product.variants.nodes[0].id.split("/")[4];
 
   return {
     id,
@@ -274,11 +267,15 @@ async function supplementPostPurchaseFunnel(
     discount,
     productImageUrl: product.featuredImage.url,
     productDescription: product.description,
-    originalPrice: product.variants.edges[0].node.price,
+    originalPrice: product.variants.nodes[0].price,
     discountedPrice: (
-      product.variants.edges[0].node.price -
-      (discount / 100) * product.variants.edges[0].node.price
+      product.variants.nodes[0].price -
+      (discount / 100) * product.variants.nodes[0].price
     ).toFixed(2),
+    variants: product.variants.nodes.map((variant: any) => ({
+      ...variant,
+      id: variant.id.split("/")[4],
+    })),
     changes: [
       {
         type: "add_variant",

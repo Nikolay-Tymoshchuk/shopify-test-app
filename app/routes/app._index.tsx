@@ -3,7 +3,6 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-// import { useFetcher } from "@remix-run/react";
 import type { TableData } from "@shopify/polaris";
 import {
   Page,
@@ -31,12 +30,11 @@ import {
   useFetcher,
   useLoaderData,
   useNavigate,
-  useNavigation,
   useSearchParams,
-  useSubmit,
 } from "@remix-run/react";
 import { getFunnels } from "../models/Funnel.server";
 import db from "../db.server";
+import { getTotalStats } from "~/models/Statistic.server";
 
 interface EmptyQRCodeStateProps {
   onAction: () => void;
@@ -54,6 +52,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     page: currentPage,
   } = await getFunnels(session.shop, admin.graphql, page, limit);
 
+  const stats = await getTotalStats(session.shop);
+
   // Check if the current page is different from the requested page
   if (currentPage !== page) {
     url.searchParams.set("page", String(currentPage));
@@ -65,6 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     page: currentPage,
     limit,
     total,
+    stats,
   });
 };
 
@@ -106,11 +107,11 @@ const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({ onAction }) => (
   </EmptyState>
 );
 
-function MyModal({ funnels, activeId }) {
+function MyModal({ funnels, activeId }: { funnels: any; activeId: string }) {
   const fetcher = useFetcher();
 
   useEffect(() => {
-    if (fetcher.data?.success) {
+    if ((fetcher.data as { success?: boolean })?.success) {
       const modalElement = document.getElementById("my-modal") as any;
       if (modalElement) {
         modalElement.hide();
@@ -143,7 +144,14 @@ function MyModal({ funnels, activeId }) {
         >
           Delete
         </button>
-        <button onClick={() => document.getElementById("my-modal")?.hide()}>
+        <button
+          onClick={() => {
+            const modalElement = document.getElementById("my-modal") as any;
+            if (modalElement) {
+              modalElement.hide();
+            }
+          }}
+        >
           Cancel
         </button>
       </ui-title-bar>
@@ -152,7 +160,7 @@ function MyModal({ funnels, activeId }) {
 }
 
 export default function Index() {
-  const { funnels, total, page, limit } = useLoaderData() as any;
+  const { funnels, total, page, limit, stats } = useLoaderData() as any;
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -222,7 +230,6 @@ export default function Index() {
                   content: "Edit funnel",
                   icon: EditIcon,
                   onAction: () => {
-                    console.log("id", id);
                     navigate(`settings/${id}`);
                   },
                 },
@@ -231,7 +238,13 @@ export default function Index() {
                   content: "Delete funnel",
                   icon: DeleteIcon,
                   onAction: () => {
-                    document.getElementById("my-modal").show();
+                    const modalElement = document.getElementById(
+                      "my-modal",
+                    ) as any;
+
+                    if (modalElement) {
+                      modalElement.show();
+                    }
                   },
                 },
               ],
@@ -304,7 +317,7 @@ export default function Index() {
 
                         <Box paddingBlockStart="200">
                           <Text as="p" variant="bodyLg" fontWeight="bold">
-                            $4.28
+                            ${stats?.totalRevenue}
                           </Text>
                         </Box>
                       </Card>
@@ -325,7 +338,7 @@ export default function Index() {
 
                         <Box paddingBlockStart="200">
                           <Text as="p" variant="bodyLg" fontWeight="bold">
-                            $2.28
+                            ${stats?.totalDiscount}
                           </Text>
                         </Box>
                       </Card>
@@ -346,7 +359,7 @@ export default function Index() {
 
                         <Box paddingBlockStart="200">
                           <Text as="p" variant="bodyLg" fontWeight="bold">
-                            3
+                            {stats?.totalOrders}
                           </Text>
                         </Box>
                       </Card>

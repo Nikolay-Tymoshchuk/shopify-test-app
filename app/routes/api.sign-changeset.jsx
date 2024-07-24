@@ -12,16 +12,14 @@ export const loader = async ({ request }) => {
 export const action = async ({ request }) => {
   const { cors } = await authenticate.public.checkout(request);
 
-  const body = await request.json();
-
-  const selectedFunnel = body?.storage?.initialData?.offer;
+  const { sub, changes } = await request.json();
 
   const payload = {
     iss: process.env.SHOPIFY_API_KEY,
     jti: uuidv4(),
     iat: Date.now(),
-    sub: body.referenceId,
-    changes: selectedFunnel?.changes,
+    sub,
+    changes,
   };
 
   const token = jwt.sign(payload, process.env.SHOPIFY_API_SECRET);
