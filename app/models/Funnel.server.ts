@@ -2,8 +2,8 @@ import db from "../db.server";
 
 interface Funnel {
   title: string;
-  triggerProductTitle: string;
-  offerProductTitle: string;
+  triggerProductId: string;
+  offerProductId: string;
   discount: number;
 }
 
@@ -57,7 +57,7 @@ export async function getFunnels(
 
   const funnels = await db.funnel.findMany({
     where: { shop },
-    orderBy: { id: "desc" },
+    orderBy: { updatedAt: "desc" },
     skip: (currentPage - 1) * limit,
     take: limit,
   });
@@ -189,12 +189,12 @@ export function validateFunnel(data: Funnel) {
     errors.title = "Name is required";
   }
 
-  if (!data.triggerProductTitle) {
-    errors.triggerProductTitle = "Trigger is required";
+  if (!data.triggerProductId) {
+    errors.triggerProductId = "Trigger product is required";
   }
 
-  if (!data.offerProductTitle) {
-    errors.offerProductTitle = "Offer is required";
+  if (!data.offerProductId) {
+    errors.offerProductId = "Offer product is required";
   }
 
   if (Object.keys(errors).length) {

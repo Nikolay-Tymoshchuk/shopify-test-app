@@ -5,28 +5,23 @@ export async function getTotalStats(shop: string) {
     where: { shop },
   });
 
+  const emptyResponse = {
+    totalOrders: 0,
+    totalRevenue: 0,
+    totalDiscount: 0,
+  };
+
   if (!response) {
-    return {
-      totalOrders: 0,
-      totalRevenue: 0,
-      totalDiscount: 0,
-    };
+    return emptyResponse;
   }
 
-  const result = response.reduce(
-    (acc, curr) => {
-      acc.totalOrders += 1;
-      acc.totalRevenue += curr.revenue;
-      acc.totalDiscount += curr.discount;
+  const result = response.reduce((acc, curr) => {
+    acc.totalOrders += 1;
+    acc.totalRevenue += curr.revenue;
+    acc.totalDiscount += curr.discount;
 
-      return acc;
-    },
-    {
-      totalOrders: 0,
-      totalRevenue: 0,
-      totalDiscount: 0,
-    },
-  );
+    return acc;
+  }, emptyResponse);
 
   return result;
 }

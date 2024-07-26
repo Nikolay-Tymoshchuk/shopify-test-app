@@ -1,35 +1,40 @@
 import {
-  Page,
-  Card,
-  Select,
-  DatePicker,
   Button,
+  Card,
+  DatePicker,
   Layout,
+  Page,
+  Select,
 } from "@shopify/polaris";
-import React, { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 
+import type { DataPikerRange } from "@/types/components.type";
+
+/**
+ * This is silly page which deals nothing
+ */
 function BillingsPage() {
-  const [selectedDateRange, setSelectedDateRange] = useState({
+  const [selectedDateRange, setSelectedDateRange] = useState<DataPikerRange>({
     start: new Date(),
     end: new Date(),
   });
 
-  const [selectedOption, setSelectedOption] = useState("monthly");
-
   const handleDateRangeChange = useCallback(
-    (value: any) => setSelectedDateRange(value),
-    [],
-  );
-  const handleOptionChange = useCallback(
-    (value: any) => setSelectedOption(value),
+    (value: DataPikerRange) => setSelectedDateRange(value),
     [],
   );
 
+  const [selectedOption, setSelectedOption] = useState("monthly");
   const options = [
     { label: "Monthly", value: "monthly" },
     { label: "Annually", value: "annually" },
     { label: "Weekly", value: "weekly" },
   ];
+
+  const handleOptionChange = useCallback(
+    (value: "monthly" | "annually" | "weekly") => setSelectedOption(value),
+    [],
+  );
 
   return (
     <Page title="Billings">

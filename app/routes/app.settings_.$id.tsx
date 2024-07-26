@@ -1,5 +1,10 @@
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, useNavigation, useSubmit } from "@remix-run/react";
+import { json } from "@remix-run/node";
+import {
+  useLoaderData,
+  useNavigate,
+  useNavigation,
+  useSubmit,
+} from "@remix-run/react";
 import {
   BlockStack,
   Button,
@@ -19,17 +24,29 @@ import { useCallback, useEffect, useState } from "react";
 
 import db from "../db.server";
 import {
+  getAllFunnelsTriggerProductsIds,
   getFunnel,
   validateFunnel,
-  getAllFunnelsTriggerProductsIds,
 } from "../models/Funnel.server";
 import { authenticate } from "../shopify.server";
 
-export async function loader({ request, params }) {
-  const { admin } = await authenticate.admin(request);
+import type { FunnelPageLoaderProps } from "@/types/components.type";
+import type { FunnelFormData } from "@/types/data.type";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { admin, redirect } = await authenticate.admin(request);
+
+  /**
+   * Get a list of all id products that are target in the Funnels List.
+   * This is necessary to ensure that when creating or editing a Funnel these products do not appear in the target list.
+   * This way we avoid situations where one product can be targeted in several funnels at the same time
+   */
   const triggeredIds = await getAllFunnelsTriggerProductsIds();
 
+  /**
+   * If param.id is "new" it is mean creation of new funnel.
+   */
   if (params.id === "new") {
     return json({
       destination: "funnel",
@@ -37,29 +54,39 @@ export async function loader({ request, params }) {
       triggeredIds,
     });
   }
+
+  /**
+   * If funnel exist we fulfilling form by it data.
+   * If funnel not exist make redirect to to funnel creation page
+   */
   const funnel = await getFunnel(Number(params.id), admin.graphql);
 
-  return json({
-    ...funnel,
-    triggeredIds,
-  });
+  return funnel
+    ? json({
+        ...funnel,
+        triggeredIds,
+      })
+    : redirect("/app/settings/new");
 }
 
-export async function action({ request, params }) {
-  const { session } = await authenticate.admin(request);
+export async function action({ request, params }: ActionFunctionArgs) {
+  const { session, redirect } = await authenticate.admin(request);
   const { shop } = session;
 
-  /** @type {any} */
   const data = {
     ...Object.fromEntries(await request.formData()),
     shop,
-  };
+  } as FunnelFormData;
+
+  if (data.triggerProductId === "") {
+    delete data.triggerProductId;
+  }
 
   data.discount = Number(data.discount);
 
   if (data.action === "delete") {
     await db.funnel.delete({ where: { id: Number(params.id) } });
-    return redirect("/app");
+    throw redirect("/app");
   }
 
   const errors = validateFunnel(data);
@@ -73,11 +100,11 @@ export async function action({ request, params }) {
       ? await db.funnel.create({ data })
       : await db.funnel.update({ where: { id: Number(params.id) }, data });
 
-  return redirect(`/app/settings/${funnel.id}`);
+  throw redirect(`/app/settings/${funnel.id}`);
 }
 
 export default function FunnelsForm() {
-  const { triggeredIds, ...funnel } = useLoaderData();
+  const { triggeredIds, ...funnel } = useLoaderData() as FunnelPageLoaderProps;
   const [titleValue, setTitleValue] = useState(funnel.title || "");
   const [discountValue, setDiscountValue] = useState(funnel.discount || 0);
 
@@ -95,6 +122,7 @@ export default function FunnelsForm() {
   const [cleanFormState, setCleanFormState] = useState(funnel);
   const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
 
+  const navigate = useNavigate();
   const nav = useNavigation();
   const isSaving =
     nav.state === "submitting" && nav.formData?.get("action") !== "delete";
@@ -135,7 +163,9 @@ export default function FunnelsForm() {
       action: "select",
       multiple: false,
       filter: {
-        query: `NOT id:${triggeredIds.join(" AND NOT id:")}`,
+        query: isOfferProduct
+          ? ""
+          : `NOT id:${triggeredIds.join(" AND NOT id:")}`,
       },
     });
 
@@ -159,7 +189,6 @@ export default function FunnelsForm() {
             ...formState,
             triggerProductId: id,
             triggerProductTitle: title,
-            triggerProductPrice: price,
             triggerProductImage: image.originalSrc,
           });
     }
@@ -181,20 +210,27 @@ export default function FunnelsForm() {
           ...formState,
           triggerProductId: "",
           triggerProductTitle: "",
-          triggerProductPrice: "",
           triggerProductImage: "",
         });
   }
 
   const submit = useSubmit();
+
+  function handleRedirectToNew() {
+    navigate("/app/settings");
+  }
+
+  const handleCancel = useCallback(() => {
+    setFormState(cleanFormState);
+    setTitleValue(cleanFormState.title);
+    setDiscountValue(cleanFormState.discount);
+  }, [cleanFormState]);
+
   function handleSave() {
     const data = {
       title: formState.title,
-      triggerProductTitle: formState.triggerProductTitle || "",
       triggerProductId: formState.triggerProductId || "",
-      triggerProductPrice: formState.triggerProductPrice || "",
       offerProductId: formState.offerProductId || "",
-      offerProductTitle: formState.offerProductTitle || "",
       offerProductPrice: formState.offerProductPrice || "",
       discount: formState.discount || 0,
     };
@@ -425,6 +461,25 @@ export default function FunnelsForm() {
               disabled: !isDirty || isSaving || isDeleting,
               onAction: handleSave,
             }}
+            secondaryActions={
+              funnel.id
+                ? [
+                    {
+                      content: "Create new funnel",
+                      loading: isSaving,
+                      disabled: isSaving || isDeleting,
+                      onAction: handleRedirectToNew,
+                    },
+                    {
+                      content: "Cancel",
+                      tone: "secondary",
+                      loading: isSaving,
+                      disabled: isSaving || isDeleting,
+                      onAction: handleCancel,
+                    },
+                  ]
+                : undefined
+            }
           />
         </Layout.Section>
       </Layout>

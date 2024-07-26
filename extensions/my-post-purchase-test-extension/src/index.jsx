@@ -1,27 +1,27 @@
 import {
   BlockStack,
+  Bookend,
   Button,
   CalloutBanner,
   extend,
   Heading,
   Image,
+  InlineStack,
   Layout,
   render,
   Select,
   Separator,
   Text,
-  TextField,
   TextBlock,
   TextContainer,
+  TextField,
   Tiles,
   useExtensionInput,
-  InlineStack,
-  Bookend,
 } from "@shopify/post-purchase-ui-extensions-react";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://travels-eyes-nickname-poems.trycloudflare.com";
+const APP_URL = "https://bat-promotion-tree-shaped.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
@@ -163,6 +163,8 @@ export function App() {
     options.quantity
   ).toFixed(2);
 
+  console.log("calculatedPurchase", calculatedPurchase);
+
   async function acceptOrder() {
     setLoading(true);
 
@@ -190,7 +192,7 @@ export function App() {
 
     await applyChangeset(token);
 
-    const res = await fetch(`${APP_URL}/api/statistic-update`, {
+    await fetch(`${APP_URL}/api/statistic-update`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${inputData.token}`,
@@ -202,8 +204,6 @@ export function App() {
         discount: parseFloat((originalPrice - total).toFixed(2)),
       }),
     }).then((response) => response.json());
-
-    console.log("res", res);
 
     done();
   }

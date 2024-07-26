@@ -23,17 +23,20 @@ CREATE TABLE "Funnel" (
     "title" TEXT NOT NULL,
     "shop" TEXT NOT NULL,
     "triggerProductId" TEXT NOT NULL,
-    "triggerProductTitle" TEXT NOT NULL,
-    "triggerProductPrice" TEXT NOT NULL,
-    "triggerProductImage" TEXT,
     "offerProductId" TEXT NOT NULL,
-    "offerProductTitle" TEXT NOT NULL,
     "offerProductPrice" TEXT NOT NULL,
-    "offerProductImage" TEXT,
-    "totalDiscount" REAL DEFAULT 0,
-    "totalRevenue" REAL DEFAULT 0,
-    "totalOrders" INTEGER DEFAULT 0,
     "discount" REAL DEFAULT 0,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- CreateTable
+CREATE TABLE "Statistic" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "shop" TEXT NOT NULL,
+    "funnelId" INTEGER NOT NULL,
+    "revenue" REAL NOT NULL,
+    "discount" REAL NOT NULL,
     "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
