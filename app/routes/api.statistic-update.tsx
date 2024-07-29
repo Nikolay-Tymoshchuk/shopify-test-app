@@ -1,7 +1,7 @@
 import { json } from "@remix-run/node";
 
-import { addOneToStatistic } from "../models/Statistic.server";
-import { authenticate } from "../shopify.server";
+import { addOneToStatistic } from "~/models/Statistic.server";
+import { authenticate } from "~/shopify.server";
 
 import type { CurrentSessionType } from "@/types/offer.type";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";

@@ -1,11 +1,7 @@
 import db from "../db.server";
 
-interface Funnel {
-  title: string;
-  triggerProductId: string;
-  offerProductId: string;
-  discount: number;
-}
+import type { Variant } from "@/types/offer.type";
+import type { Funnel, FunnelFormFields } from "@/types/models.type";
 
 export async function getFunnel(id: number, graphql: Function) {
   const funnel = await db.funnel.findFirst({ where: { id } });
@@ -125,7 +121,7 @@ export async function getOffer(
   }
 }
 
-async function supplementFunnel(funnel: any, graphql: any) {
+async function supplementFunnel(funnel: Funnel, graphql: Function) {
   const response = await graphql(
     `
       query supplementFunnel($triggerProductId: ID!, $offerProductId: ID!) {
@@ -172,18 +168,17 @@ async function supplementFunnel(funnel: any, graphql: any) {
   return {
     ...funnel,
     triggerProductId: data.triggerProduct.id,
-    triggerProductPrice: data.triggerProduct.price.nodes[0]?.price,
     triggerProductTitle: data.triggerProduct.title,
     triggerProductImage: data.triggerProduct.images.nodes[0]?.url,
     offerProductTitle: data.offerProduct.title,
     offerProductId: data.offerProduct.id,
-    offerProductPrice: data.offerProduct.price.nodes[0]?.price,
+    offerProductPrice: Number(data.offerProduct.price.nodes[0]?.price),
     offerProductImage: data.offerProduct.images.nodes[0]?.url,
   };
 }
 
-export function validateFunnel(data: Funnel) {
-  const errors = {} as Partial<Funnel>;
+export function validateFunnel(data: FunnelFormFields) {
+  const errors = {} as Partial<FunnelFormFields>;
 
   if (!data.title) {
     errors.title = "Name is required";
@@ -203,10 +198,13 @@ export function validateFunnel(data: Funnel) {
 }
 
 async function supplementPostPurchaseFunnel(
-  { id, title, discount, offerProductId }: any,
+  { id, discount, offerProductId }: Funnel,
   accessToken: string,
 ) {
-  async function fetchGraphQL(query: string, variables: Record<string, any>) {
+  async function fetchGraphQL(
+    query: string,
+    variables: Record<string, string>,
+  ) {
     const response = await fetch(
       "https://niko-wonderwork.myshopify.com/admin/api/2024-07/graphql.json",
       {
@@ -262,17 +260,9 @@ async function supplementPostPurchaseFunnel(
 
   return {
     id,
-    title,
     productTitle: product.title,
     discount,
-    productImageUrl: product.featuredImage.url,
-    productDescription: product.description,
-    originalPrice: product.variants.nodes[0].price,
-    discountedPrice: (
-      product.variants.nodes[0].price -
-      (discount / 100) * product.variants.nodes[0].price
-    ).toFixed(2),
-    variants: product.variants.nodes.map((variant: any) => ({
+    variants: product.variants.nodes.map((variant: Variant) => ({
       ...variant,
       id: variant.id.split("/")[4],
     })),

@@ -1,5 +1,7 @@
 import db from "../db.server";
 
+import type { Statistic } from "@/types/models.type";
+
 export async function getTotalStats(shop: string) {
   const response = await db.statistic.findMany({
     where: { shop },
@@ -26,7 +28,7 @@ export async function getTotalStats(shop: string) {
   return result;
 }
 
-export async function addOneToStatistic(data: any) {
+export async function addOneToStatistic(data: Statistic) {
   const response = await db.statistic.create({
     data,
   });

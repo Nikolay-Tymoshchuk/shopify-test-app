@@ -1,3 +1,4 @@
+import type {PostPurchaseRenderApi} from "@shopify/post-purchase-ui-extensions-react";
 import {
   BlockStack,
   Bookend,
@@ -18,10 +19,18 @@ import {
   Tiles,
   useExtensionInput,
 } from "@shopify/post-purchase-ui-extensions-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
+
+import type {AddVariantChange, CalculatedPurchase, PurchaseOption,} from "@/types/offer.type";
+import type {
+  PostPurchaseFormState,
+  PostPurchaseMoneyLine,
+  PostPurchaseMoneySummary,
+  PostPurchasePriceHeader,
+} from "@/types/components.type";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://bat-promotion-tree-shaped.trycloudflare.com";
+const APP_URL = "https://bg-exit-singing-nz.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
@@ -48,41 +57,54 @@ render("Checkout::PostPurchase::Render", () => <App />);
 
 export function App() {
   const { storage, inputData, calculateChangeset, applyChangeset, done } =
-    useExtensionInput();
+    useExtensionInput() as PostPurchaseRenderApi;
+
   const [loading, setLoading] = useState(true);
-  const [calculatedPurchase, setCalculatedPurchase] = useState();
+  const [calculatedPurchase, setCalculatedPurchase] =
+    useState<CalculatedPurchase>();
 
-  const { offer: purchaseOption } = storage.initialData;
+  const { offer: purchaseOption } = storage.initialData as {
+    offer: PurchaseOption;
+  };
 
-  const [options, setOptions] = useState({
+  /**
+   * necessary options for the post-purchase form
+   */
+  const [options, setOptions] = useState<PostPurchaseFormState>({
     quantity: purchaseOption.changes[0]?.quantity || 1,
-    variantId: purchaseOption.variants[0].id,
+    variantId: purchaseOption.variants[0].id || "",
     variantTitle: purchaseOption.variants[0].title,
-    imageSrc:
-      purchaseOption.productImageUrl ||
-      purchaseOption.variants[0].image.url ||
-      "",
+    imageSrc: purchaseOption.variants[0].image.url || "",
     altText: purchaseOption.variants[0].image.altText || "",
     maxQuantity: purchaseOption.variants[0].inventoryQuantity || undefined,
     mainTitle: purchaseOption.productTitle,
   });
 
+  /**
+   *   Function for changing the variant
+   */
   const handleSelectChange = useCallback(
-    (value) => {
+    (value: string) => {
+      const targetedVariant = purchaseOption.variants.find(
+        (variant) => variant.id === value,
+      );
+
+      if (!targetedVariant) return;
+
       const {
         id,
         title,
         image: { url, altText },
         displayName,
         inventoryQuantity,
-      } = purchaseOption.variants.find((variant) => variant.id === value);
+      } = targetedVariant;
 
       setOptions({
         ...options,
         variantId: id,
         variantTitle: title,
         imageSrc: url,
-        altText,
+        altText: altText ?? "",
         mainTitle: displayName,
         maxQuantity: inventoryQuantity,
       });
@@ -90,38 +112,67 @@ export function App() {
     [options, purchaseOption.variants],
   );
 
+  /**
+   *  Slider actions for the images. It is necessary if there are more than one image option (few variants)
+   */
   const isMoreThenOneImgOption = useMemo(() => {
+    /**
+     * Get the array of images for the slider.
+     */
     const imageSetArray =
       purchaseOption.variants?.map(({ image: { url, altText } }) => ({
         url,
         altText,
       })) || [];
+
+    /**
+     * Check if the slider is necessary
+     */
     const isNecessarySlider = imageSetArray.length > 1;
+
+    /**
+     * Get the index of the current image in the array
+     */
     const currentImageIndex = imageSetArray.findIndex(
       ({ url }) => url === options.imageSrc,
     );
 
-    const changeImage = (direction) => {
+    /**
+     * Change the image in the slider if the user clicks on the arrow buttons
+     */
+    const changeImage = (direction: number) => {
       const newIndex =
         (currentImageIndex + direction + imageSetArray.length) %
         imageSetArray.length;
+
       const { url: newImageSrc } = imageSetArray[newIndex];
+
       const variantId = purchaseOption.variants.find(
         ({ image }) => image.url === newImageSrc,
-      ).id;
-      handleSelectChange(variantId);
+      )?.id;
+
+      /**
+       * Change form data if the user clicks on the arrow buttons
+       */
+      variantId && handleSelectChange(variantId);
     };
 
     const onNextImage = () => changeImage(1);
     const onPrevImage = () => changeImage(-1);
 
-    const onImageClick = (imageSrc) => {
+    /**
+     * Change the image in the slider and variants data if the user clicks on the image
+     */
+    const onImageClick = (imageSrc: string) => {
       const variantId = purchaseOption.variants.find(
         ({ image }) => image.url === imageSrc,
-      ).id;
-      handleSelectChange(variantId);
+      )?.id;
+      variantId && handleSelectChange(variantId);
     };
 
+    /**
+     * Return necessary data for the slider manipulations
+     */
     return {
       isNecessarySlider,
       onNextImage,
@@ -131,40 +182,70 @@ export function App() {
     };
   }, [handleSelectChange, options.imageSrc, purchaseOption.variants]);
 
+  /**
+   * Calculate the purchase new price when some changes are made
+   */
   useEffect(() => {
     async function calculatePurchase() {
       const result = await calculateChangeset({
         changes: [
           {
             ...purchaseOption.changes[0],
-            variantId: options.variantId,
+            variantId: Number(options.variantId),
             quantity: options.quantity,
           },
-        ],
+        ] as AddVariantChange[],
       });
+
       setCalculatedPurchase(result.calculatedPurchase);
-      setLoading(false);
     }
 
-    calculatePurchase();
+    calculatePurchase().then(()=>{
+      setLoading(false)
+    });
+
   }, [calculateChangeset, purchaseOption.changes, options]);
 
-  const shipping =
-    calculatedPurchase?.addedShippingLines[0]?.priceSet?.presentmentMoney
-      ?.amount;
-  const taxes =
-    calculatedPurchase?.addedTaxLines[0]?.priceSet?.presentmentMoney?.amount;
-  const total = calculatedPurchase?.totalOutstandingSet.presentmentMoney.amount;
-  const discountedPrice =
-    calculatedPurchase?.updatedLineItems[0].totalPriceSet.presentmentMoney
-      .amount;
-  const originalPrice = (
-    calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney.amount *
-    options.quantity
-  ).toFixed(2);
+  /**
+   * Get the payments data for the post-purchase form
+   */
+  const payments = useMemo(() => {
+    const shipping =
+      Number(
+        calculatedPurchase?.addedShippingLines[0]?.priceSet?.presentmentMoney
+          ?.amount,
+      ) || 0;
+    const taxes =
+      Number(
+        calculatedPurchase?.addedTaxLines[0]?.priceSet?.presentmentMoney
+          ?.amount,
+      ) || 0;
+    const total = Number(
+      calculatedPurchase?.totalOutstandingSet.presentmentMoney.amount,
+    );
+    const discountedPrice =
+      Number(
+        calculatedPurchase?.updatedLineItems[0].totalPriceSet.presentmentMoney
+          .amount,
+      ) || 0;
+    const originalPrice =
+      Number(
+        calculatedPurchase?.updatedLineItems[0].priceSet.presentmentMoney
+          .amount,
+      ) * options.quantity || 0;
 
-  console.log("calculatedPurchase", calculatedPurchase);
+    return {
+      shipping,
+      taxes,
+      total,
+      discountedPrice,
+      originalPrice,
+    };
+  }, [calculatedPurchase, options.quantity]);
 
+  /**
+   * Accept the order and apply the changeset
+   */
   async function acceptOrder() {
     setLoading(true);
 
@@ -190,8 +271,14 @@ export function App() {
       .then((response) => response.token)
       .catch((e) => console.log(e));
 
+    /**
+     * Apply the changeset
+     */
     await applyChangeset(token);
 
+    /**
+     * Update the statistic for analytics block on the dashboard
+     */
     await fetch(`${APP_URL}/api/statistic-update`, {
       method: "POST",
       headers: {
@@ -200,27 +287,33 @@ export function App() {
       },
       body: JSON.stringify({
         funnelId: purchaseOption.id,
-        revenue: Number(total),
-        discount: parseFloat((originalPrice - total).toFixed(2)),
+        revenue: Number(payments.total),
+        discount: parseFloat(
+          (payments.originalPrice - payments.total).toFixed(2),
+        ),
       }),
     }).then((response) => response.json());
 
-    done();
+    // Redirect to the thank-you page
+    await done();
   }
 
-  function declineOrder() {
+  /**
+   * Decline the order
+   */
+  async function declineOrder() {
     setLoading(true);
     // Redirect to the thank-you page
-    done();
+    await done();
   }
 
-  const handleQuantityChange = (value) => {
+  const handleQuantityChange = (value: string) => {
     setOptions({ ...options, quantity: Number(value) });
   };
 
   return (
     <BlockStack spacing="loose">
-      <CalloutBanner background="transparent" border="none" spacing="loose">
+      <CalloutBanner border="none" spacing="loose">
         <BlockStack spacing="loose">
           <TextContainer>
             <Text size="xlarge" emphasized>
@@ -266,15 +359,15 @@ export function App() {
         <BlockStack>
           <Heading level={2}>{options.mainTitle}</Heading>
           <PriceHeader
-            discountedPrice={discountedPrice}
-            originalPrice={originalPrice}
+            discountedPrice={payments.discountedPrice}
+            originalPrice={payments.originalPrice}
             loading={!calculatedPurchase}
           />
           <Bookend leading alignment="leading" spacing="tight">
             <TextField
               label="Quantity"
               type="number"
-              value={options.quantity}
+              value={options.quantity.toString()}
               onInput={handleQuantityChange}
               tooltip={{
                 label: "Quantity",
@@ -282,11 +375,13 @@ export function App() {
                 purchase up to ${options.maxQuantity} of this item.`,
               }}
               error={
-                options.quantity > options.maxQuantity
-                  ? "Quantity exceeds available stock"
-                  : options.quantity < 1
-                    ? "Quantity must be at least 1"
-                    : undefined
+                options.maxQuantity
+                  ? options.quantity > options.maxQuantity
+                    ? "Quantity exceeds available stock"
+                    : options.quantity < 1
+                      ? "Quantity must be at least 1"
+                      : undefined
+                  : undefined
               }
             />
             <Select
@@ -299,32 +394,29 @@ export function App() {
               }))}
             />
           </Bookend>
-          <BlockStack spacing="xtight">
-            <TextBlock subdued>{purchaseOption.description}</TextBlock>
-          </BlockStack>
           <BlockStack spacing="tight">
             <Separator />
             <MoneyLine
               label="Subtotal"
-              amount={discountedPrice}
+              amount={payments.discountedPrice}
               loading={!calculatedPurchase}
             />
             <MoneyLine
               label="Shipping"
-              amount={shipping}
+              amount={payments.shipping}
               loading={!calculatedPurchase}
             />
             <MoneyLine
               label="Taxes"
-              amount={taxes}
+              amount={payments.taxes}
               loading={!calculatedPurchase}
             />
             <Separator />
-            <MoneySummary label="Total" amount={total} />
+            <MoneySummary label="Total" amount={payments.total} />
           </BlockStack>
           <BlockStack>
             <Button onPress={acceptOrder} submit loading={loading}>
-              Pay now · {formatCurrency(total)}
+              Pay now · {formatCurrency(payments.total)}
             </Button>
             <Button onPress={declineOrder} subdued loading={loading}>
               Decline this offer
@@ -336,7 +428,11 @@ export function App() {
   );
 }
 
-function PriceHeader({ discountedPrice, originalPrice, loading }) {
+function PriceHeader({
+  discountedPrice,
+  originalPrice,
+  loading,
+}: PostPurchasePriceHeader) {
   return (
     <TextContainer alignment="leading" spacing="loose">
       <Text role="deletion" size="large">
@@ -350,7 +446,7 @@ function PriceHeader({ discountedPrice, originalPrice, loading }) {
   );
 }
 
-function MoneyLine({ label, amount, loading = false }) {
+function MoneyLine({ label, amount, loading = false }: PostPurchaseMoneyLine) {
   return (
     <Tiles>
       <TextBlock size="small">{label}</TextBlock>
@@ -363,7 +459,7 @@ function MoneyLine({ label, amount, loading = false }) {
   );
 }
 
-function MoneySummary({ label, amount }) {
+function MoneySummary({ label, amount }: PostPurchaseMoneySummary) {
   return (
     <Tiles>
       <TextBlock size="medium" emphasized>
@@ -378,9 +474,9 @@ function MoneySummary({ label, amount }) {
   );
 }
 
-function formatCurrency(amount) {
-  if (!amount || parseInt(amount, 10) === 0) {
+function formatCurrency(amount: number) {
+  if (!amount || amount === 0) {
     return "Free";
   }
-  return `$${amount}`;
+  return `$${amount.toFixed(2)}`;
 }

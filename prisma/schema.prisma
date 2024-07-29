@@ -36,10 +36,10 @@ model Funnel {
   shop                  String
   triggerProductId      String
   offerProductId        String
-  offerProductPrice     String
-  discount              Float?   @default(0)
+  offerProductPrice     Float
+  discount              Float   @default(0)
   createdAt             DateTime @default(now())
-  updatedAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model Statistic {
@@ -49,5 +49,5 @@ model Statistic {
   revenue   Float
   discount  Float
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -1,14 +1,8 @@
-export type FunnelBasic = {
-  title: string;
-  shop: string;
-  triggerProductId: string;
-  offerProductId: string;
-  offerProductPrice: number;
-  discount: number;
-};
-
 export type Funnel = FunnelBasic & {
   id: number;
+};
+
+export type FunnelModel = Funnel & {
   createdAt: string;
   updatedAt: string;
 };
@@ -18,4 +12,24 @@ export type FunnelExtendedByProducts = Funnel & {
   triggerProductImage?: string | null;
   offerProductTitle: string;
   offerProductImage?: string | null;
+};
+
+export type FunnelFormFields = {
+  title: string;
+  triggerProductId: string;
+  offerProductId: string;
+  discount: number;
+};
+
+export type FunnelBasic = FunnelFormFields & {
+  shop: string;
+  offerProductPrice: number;
+};
+
+export type Statistic = {
+  id: number;
+  shop: string;
+  funnelId: number;
+  revenue: number;
+  discount: number;
 };

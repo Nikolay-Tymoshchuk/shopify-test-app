@@ -65,16 +65,30 @@ export interface DataPikerRange {
   end: Date;
 }
 
-interface NewFunnelPageLoaderProps {
-  destination: string;
-  title: string;
+export interface FunnelPageLoaderProps extends FunnelExtendedByProducts {
   triggeredIds: string[];
 }
 
-interface BasicFunnelPageLoaderProps extends FunnelExtendedByProducts {
-  triggeredIds: string[];
+export interface PostPurchaseFormState {
+  quantity: number;
+  variantId: string;
+  variantTitle: string;
+  imageSrc: string;
+  altText: string;
+  maxQuantity: number | undefined;
+  mainTitle: string;
 }
 
-export type FunnelPageLoaderProps =
-  | NewFunnelPageLoaderProps
-  | BasicFunnelPageLoaderProps;
+export interface PostPurchasePriceHeader {
+  discountedPrice: number;
+  originalPrice: number;
+  loading: boolean;
+}
+
+export interface PostPurchaseMoneySummary {
+  label: string;
+  amount: number;
+}
+export interface PostPurchaseMoneyLine extends PostPurchaseMoneySummary {
+  loading?: boolean;
+}

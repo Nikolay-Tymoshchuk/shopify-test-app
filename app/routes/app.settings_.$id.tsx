@@ -35,7 +35,11 @@ import type { FunnelFormData } from "@/types/data.type";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { admin, redirect } = await authenticate.admin(request);
+  const {
+    admin,
+    redirect,
+    session: { shop },
+  } = await authenticate.admin(request);
 
   /**
    * Get a list of all id products that are target in the Funnels List.
@@ -47,16 +51,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   /**
    * If param.id is "new" it is mean creation of new funnel.
    */
+
   if (params.id === "new") {
     return json({
-      destination: "funnel",
       title: "",
+      triggerProductId: "",
+      offerProductId: "",
+      offerProductPrice: 0,
+      discount: 0,
+      shop,
       triggeredIds,
     });
   }
 
   /**
-   * If funnel exist we fulfilling form by it data.
+   * If funnel exist we fulfilling form by its data.
    * If funnel not exist make redirect to to funnel creation page
    */
   const funnel = await getFunnel(Number(params.id), admin.graphql);
@@ -73,21 +82,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { session, redirect } = await authenticate.admin(request);
   const { shop } = session;
 
+  /**
+   * Get data from the form and validate it.
+   * Transform numeric values from string to number in fields discount and offerProductPrice
+   */
   const data = {
     ...Object.fromEntries(await request.formData()),
     shop,
   } as FunnelFormData;
 
-  if (data.triggerProductId === "") {
-    delete data.triggerProductId;
-  }
-
   data.discount = Number(data.discount);
-
-  if (data.action === "delete") {
-    await db.funnel.delete({ where: { id: Number(params.id) } });
-    throw redirect("/app");
-  }
+  data.offerProductPrice = Number(data.offerProductPrice);
 
   const errors = validateFunnel(data);
 
@@ -95,39 +100,55 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return json({ errors }, { status: 422 });
   }
 
+  /**
+   * If param.id is "new" it is mean creation of new funnel.
+   * If funnel exist we update it.
+   */
+
   const funnel =
     params.id === "new"
       ? await db.funnel.create({ data })
       : await db.funnel.update({ where: { id: Number(params.id) }, data });
 
+  /**
+   * redirect needs for update form state.
+   * For example if we not redirect after creation of new funnel,
+   * secondary actions in PageAction block will be not accessible.
+   */
+
   throw redirect(`/app/settings/${funnel.id}`);
 }
 
 export default function FunnelsForm() {
+  /**
+   * Fill in the form data from loader and make controlled input fields
+   */
   const { triggeredIds, ...funnel } = useLoaderData() as FunnelPageLoaderProps;
+  const [formState, setFormState] = useState(funnel);
   const [titleValue, setTitleValue] = useState(funnel.title || "");
-  const [discountValue, setDiscountValue] = useState(funnel.discount || 0);
+  const [discountValue, setDiscountValue] = useState(
+    funnel.discount.toString() || "",
+  );
 
+  /**
+   * Get initial form state for control changes (!isDirty) and reset form (handleCancel)
+   */
+  const [cleanFormState, setCleanFormState] = useState(funnel);
+  const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
+
+  /**
+   * Handle changes in the input fields.
+   * Create debounced change of formState by input changes.
+   */
   const handleTitleChange = useCallback(
-    (newValue) => setTitleValue(newValue),
+    (newValue: string) => setTitleValue(newValue),
     [],
   );
 
   const handleDiscountChange = useCallback(
-    (newValue) => setDiscountValue(newValue),
+    (newValue: string) => setDiscountValue(newValue),
     [],
   );
-
-  const [formState, setFormState] = useState(funnel);
-  const [cleanFormState, setCleanFormState] = useState(funnel);
-  const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
-
-  const navigate = useNavigate();
-  const nav = useNavigation();
-  const isSaving =
-    nav.state === "submitting" && nav.formData?.get("action") !== "delete";
-  const isDeleting =
-    nav.state === "submitting" && nav.formData?.get("action") === "delete";
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -135,30 +156,50 @@ export default function FunnelsForm() {
         ...formState,
         title: titleValue,
       });
-    }, 500);
+    }, 200);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [titleValue]);
+  }, [formState, titleValue]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setFormState({
         ...formState,
-        discount: discountValue,
+        discount: Number(discountValue),
       });
     }, 500);
 
     return () => {
       clearTimeout(handler);
     };
-  }, [discountValue]);
+  }, [discountValue, formState]);
 
-  async function selectProduct(e) {
-    const isOfferProduct = e.target.closest("button").id === "offer-product";
+  /**
+   * Get loading state for additional advanced actions like disable buttons etc.
+   */
+  const navigate = useNavigate();
+  const nav = useNavigation();
+  const isLoading = nav.state === "submitting";
 
-    const products = await window.shopify.resourcePicker({
+
+  /**
+   *
+   * @param idOfButton - id of the button that was clicked
+   * Select product from the Shopify store functionality.
+   * Depending on the idOfButton, the function selects the product for the offer or trigger.
+   */
+  async function selectProduct(
+    idOfButton: "offer-product" | "trigger-product",
+  ) {
+    const isOfferProduct = idOfButton === "offer-product";
+
+    /**
+     * Open Shopify Resource Picker. Depending on the idOfButton,
+     * the filter is set to exclude the products that are already in the funnel.
+     */
+    const products = await window["shopify"].resourcePicker({
       type: "product",
       action: "select",
       multiple: false,
@@ -182,7 +223,7 @@ export default function FunnelsForm() {
             ...formState,
             offerProductId: id,
             offerProductTitle: title,
-            offerProductPrice: price,
+            offerProductPrice: Number.isNaN(Number(price)) ? 0 : Number(price),
             offerProductImage: image.originalSrc,
           })
         : setFormState({
@@ -194,16 +235,23 @@ export default function FunnelsForm() {
     }
   }
 
-  function clearProductData(e) {
-    const isOfferProduct =
-      e.target.closest("button").id === "clear-offer-product";
+  /**
+   *
+   * @param idOfClearButton - id of the button that was clicked
+   * Clear product data from the form.
+   * Depending on the idOfClearButton, the function clears the product data for the offer or trigger.
+   */
+  function clearProductData(
+    idOfClearButton: "clear-offer-product" | "clear-trigger-product",
+  ) {
+    const isOfferProduct = idOfClearButton === "clear-offer-product";
 
     isOfferProduct
       ? setFormState({
           ...formState,
           offerProductId: "",
           offerProductTitle: "",
-          offerProductPrice: "",
+          offerProductPrice: 0,
           offerProductImage: "",
         })
       : setFormState({
@@ -214,24 +262,29 @@ export default function FunnelsForm() {
         });
   }
 
-  const submit = useSubmit();
-
-  function handleRedirectToNew() {
-    navigate("/app/settings");
-  }
-
+  /**
+   * Reset form state to initial state
+   */
   const handleCancel = useCallback(() => {
     setFormState(cleanFormState);
     setTitleValue(cleanFormState.title);
-    setDiscountValue(cleanFormState.discount);
+    setDiscountValue(cleanFormState.discount.toString());
   }, [cleanFormState]);
 
+  /**
+   * Submit form data to the server.
+   * First, we get the submit function from the useSubmit hook.
+   * Then we create a data object with the necessary fields.
+   * Fix new clean form state for the next form changes.
+   * Finally, we submit the data to the server.
+   */
+  const submit = useSubmit();
   function handleSave() {
     const data = {
       title: formState.title,
       triggerProductId: formState.triggerProductId || "",
       offerProductId: formState.offerProductId || "",
-      offerProductPrice: formState.offerProductPrice || "",
+      offerProductPrice: formState.offerProductPrice || 0,
       discount: formState.discount || 0,
     };
 
@@ -262,7 +315,7 @@ export default function FunnelsForm() {
                     <Text as="h2" fontWeight="medium" variant="headingLg">
                       Name
                     </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="normal">
+                    <Text as="p" variant="bodyMd">
                       Self-explanatory title
                     </Text>
                   </BlockStack>
@@ -274,7 +327,6 @@ export default function FunnelsForm() {
                       value={titleValue}
                       onChange={handleTitleChange}
                       autoComplete="off"
-                      fill
                     />
                   </Card>
                 </Grid.Cell>
@@ -284,7 +336,7 @@ export default function FunnelsForm() {
                     <Text as="h2" fontWeight="medium" variant="headingLg">
                       Trigger
                     </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="normal">
+                    <Text as="p" variant="bodyMd">
                       Choose trigger product
                     </Text>
                   </BlockStack>
@@ -318,7 +370,9 @@ export default function FunnelsForm() {
                         <Button
                           variant="primary"
                           tone="critical"
-                          onClick={clearProductData}
+                          onClick={() =>
+                            clearProductData("clear-trigger-product")
+                          }
                           id="clear-trigger-product"
                           accessibilityLabel="Select Product"
                         >
@@ -339,7 +393,7 @@ export default function FunnelsForm() {
                         <Button
                           variant="primary"
                           tone="success"
-                          onClick={selectProduct}
+                          onClick={() => selectProduct("trigger-product")}
                           id="trigger-product"
                           accessibilityLabel="Select Product"
                         >
@@ -355,7 +409,7 @@ export default function FunnelsForm() {
                     <Text as="h2" fontWeight="medium" variant="headingLg">
                       Offer
                     </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="normal">
+                    <Text as="p" variant="bodyMd">
                       Choose offer product
                     </Text>
                   </BlockStack>
@@ -389,7 +443,9 @@ export default function FunnelsForm() {
                         <Button
                           variant="primary"
                           tone="critical"
-                          onClick={clearProductData}
+                          onClick={() =>
+                            clearProductData("clear-offer-product")
+                          }
                           id="clear-offer-product"
                           accessibilityLabel="Select Product"
                         >
@@ -410,7 +466,7 @@ export default function FunnelsForm() {
                         <Button
                           variant="primary"
                           tone="success"
-                          onClick={selectProduct}
+                          onClick={() => selectProduct("offer-product")}
                           id="offer-product"
                           accessibilityLabel="Select Product"
                         >
@@ -426,7 +482,7 @@ export default function FunnelsForm() {
                     <Text as="h2" fontWeight="medium" variant="headingLg">
                       Discount
                     </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="normal">
+                    <Text as="p" variant="bodyMd">
                       Choose discount percentage
                     </Text>
                   </BlockStack>
@@ -443,7 +499,7 @@ export default function FunnelsForm() {
                       max={100}
                       autoSize
                       suffix="%"
-                      align="start"
+                      align="left"
                     />
                   </Card>
                 </Grid.Cell>
@@ -456,9 +512,8 @@ export default function FunnelsForm() {
           <PageActions
             primaryAction={{
               content: "Save",
-              tone: "primary",
-              loading: isSaving,
-              disabled: !isDirty || isSaving || isDeleting,
+              loading: isLoading,
+              disabled: !isDirty || isLoading,
               onAction: handleSave,
             }}
             secondaryActions={
@@ -466,15 +521,14 @@ export default function FunnelsForm() {
                 ? [
                     {
                       content: "Create new funnel",
-                      loading: isSaving,
-                      disabled: isSaving || isDeleting,
-                      onAction: handleRedirectToNew,
+                      loading: isLoading,
+                      disabled: isLoading,
+                      onAction: () => navigate("/app/settings"),
                     },
                     {
                       content: "Cancel",
-                      tone: "secondary",
-                      loading: isSaving,
-                      disabled: isSaving || isDeleting,
+                      loading: isLoading,
+                      disabled: !isDirty,
                       onAction: handleCancel,
                     },
                   ]
