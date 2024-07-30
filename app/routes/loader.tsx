@@ -1,5 +1,7 @@
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
+  useActionData,
   useLoaderData,
   useNavigate,
   useNavigation,
@@ -12,6 +14,7 @@ import {
   Divider,
   FormLayout,
   Grid,
+  InlineError,
   Layout,
   Page,
   PageActions,
@@ -22,17 +25,17 @@ import {
 import { ImageIcon } from "@shopify/polaris-icons";
 import { useCallback, useEffect, useState } from "react";
 
-import db from "../db.server";
+import db from "~/db.server";
 import {
   getAllFunnelsTriggerProductsIds,
   getFunnel,
   validateFunnel,
-} from "../models/Funnel.server";
-import { authenticate } from "../shopify.server";
+} from "~/models/Funnel.server";
+import { authenticate } from "~/shopify.server";
 
 import type { FunnelPageLoaderProps } from "@/types/components.type";
 import type { FunnelFormData } from "@/types/data.type";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import { Funnel, FunnelFormFields } from "@/types/models.type";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const {
@@ -49,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const triggeredIds = await getAllFunnelsTriggerProductsIds();
 
   /**
-   * If param.id is "new" it is mean creation of new funnel.
+   * If param id is "new" it is mean creation of new funnel.
    */
 
   if (params.id === "new") {
@@ -65,8 +68,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   /**
-   * If funnel exist we fulfilling form by its data.
-   * If funnel not exist make redirect to to funnel creation page
+   * If funnel exist we're fulfilling form by its data.
+   * If funnel not exist make redirect to funnel creation page
    */
   const funnel = await getFunnel(Number(params.id), admin.graphql);
 
@@ -101,14 +104,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   /**
-   * If param.id is "new" it is mean creation of new funnel.
+   * If param id is "new" it is mean creation of new funnel.
    * If funnel exist we update it.
    */
 
-  const funnel =
-    params.id === "new"
-      ? await db.funnel.create({ data })
-      : await db.funnel.update({ where: { id: Number(params.id) }, data });
+const funnel: Funnel =
+  params.id === "new"
+    ? (await db.funnel.create({ data })) as Funnel
+    : (await db.funnel.update({ where: { id: Number(params.id) }, data })) as Funnel;
 
   /**
    * redirect needs for update form state.
@@ -129,6 +132,13 @@ export default function FunnelsForm() {
   const [discountValue, setDiscountValue] = useState(
     funnel.discount.toString() || "",
   );
+
+  /**
+   * Get error state for form fields
+   */
+
+  const errors =
+    (useActionData() as { errors?: Partial<FunnelFormFields> })?.errors || {};
 
   /**
    * Get initial form state for control changes (!isDirty) and reset form (handleCancel)
@@ -182,7 +192,6 @@ export default function FunnelsForm() {
   const navigate = useNavigate();
   const nav = useNavigation();
   const isLoading = nav.state === "submitting";
-
 
   /**
    *
@@ -327,6 +336,7 @@ export default function FunnelsForm() {
                       value={titleValue}
                       onChange={handleTitleChange}
                       autoComplete="off"
+                      error={errors.title}
                     />
                   </Card>
                 </Grid.Cell>
@@ -343,64 +353,76 @@ export default function FunnelsForm() {
                 </Grid.Cell>
                 <Grid.Cell columnSpan={{ md: 3, lg: 3, xl: 3 }}>
                   {formState.triggerProductId ? (
-                    <Card>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
+                    <>
+                      <Card>
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: "16px",
+                            justifyContent: "space-between",
                           }}
                         >
-                          <Thumbnail
-                            source={formState.triggerProductImage || ImageIcon}
-                            alt={formState.triggerProductTitle}
-                            size="extraSmall"
-                          />
-                          <Text as="h3" variant="headingSm">
-                            {formState.triggerProductTitle}
-                          </Text>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "16px",
+                            }}
+                          >
+                            <Thumbnail
+                              source={
+                                formState.triggerProductImage || ImageIcon
+                              }
+                              alt={formState.triggerProductTitle}
+                              size="extraSmall"
+                            />
+                            <Text as="h3" variant="headingSm">
+                              {formState.triggerProductTitle}
+                            </Text>
+                          </div>
+                          <Button
+                            variant="primary"
+                            tone="critical"
+                            onClick={() =>
+                              clearProductData("clear-trigger-product")
+                            }
+                            id="clear-trigger-product"
+                            accessibilityLabel="Select Product"
+                          >
+                            Remove
+                          </Button>
                         </div>
-                        <Button
-                          variant="primary"
-                          tone="critical"
-                          onClick={() =>
-                            clearProductData("clear-trigger-product")
-                          }
-                          id="clear-trigger-product"
-                          accessibilityLabel="Select Product"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                    </Card>
+                      </Card>
+                    </>
                   ) : (
-                    <Card>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text as="p">Please select trigger product</Text>
-                        <Button
-                          variant="primary"
-                          tone="success"
-                          onClick={() => selectProduct("trigger-product")}
-                          id="trigger-product"
-                          accessibilityLabel="Select Product"
+                    <>
+                      <Card>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
                         >
-                          Select
-                        </Button>
-                      </div>
-                    </Card>
+                          <Text as="p">Please select trigger product</Text>
+                          <Button
+                            variant="primary"
+                            tone="success"
+                            onClick={() => selectProduct("trigger-product")}
+                            id="trigger-product"
+                            accessibilityLabel="Select Product"
+                          >
+                            Select
+                          </Button>
+                        </div>
+                      </Card>
+                      {errors.triggerProductId && (
+                        <InlineError
+                          message={errors.triggerProductId}
+                          fieldID="errorTriggerProductId"
+                        />
+                      )}
+                    </>
                   )}
                 </Grid.Cell>
                 {/* LABEL: OFFER block */}
@@ -454,26 +476,34 @@ export default function FunnelsForm() {
                       </div>
                     </Card>
                   ) : (
-                    <Card>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <Text as="p">Please select your offered product</Text>
-                        <Button
-                          variant="primary"
-                          tone="success"
-                          onClick={() => selectProduct("offer-product")}
-                          id="offer-product"
-                          accessibilityLabel="Select Product"
+                    <>
+                      <Card>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                          }}
                         >
-                          Select
-                        </Button>
-                      </div>
-                    </Card>
+                          <Text as="p">Please select your offered product</Text>
+                          <Button
+                            variant="primary"
+                            tone="success"
+                            onClick={() => selectProduct("offer-product")}
+                            id="offer-product"
+                            accessibilityLabel="Select Product"
+                          >
+                            Select
+                          </Button>
+                        </div>
+                      </Card>
+                      {errors.offerProductId && (
+                        <InlineError
+                          message={errors.offerProductId}
+                          fieldID="errorOfferProductId"
+                        />
+                      )}
+                    </>
                   )}
                 </Grid.Cell>
                 {/* LABEL: DISCOUNT block */}

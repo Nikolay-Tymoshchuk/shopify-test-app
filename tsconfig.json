@@ -3,7 +3,7 @@
     "env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "app/routes/app.settings_.$id.tsx",
+    "app/routes/loader.tsx",
     "app/routes/app._index.jsx",
     "extensions/my-post-purchase-test-extension/src/index.jsx"
   ],
