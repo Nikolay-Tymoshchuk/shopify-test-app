@@ -1,14 +1,7 @@
-import {
-  Button,
-  Card,
-  DatePicker,
-  Layout,
-  Page,
-  Select,
-} from "@shopify/polaris";
-import { useCallback, useState } from "react";
+import {Button, Card, DatePicker, Layout, Page, Select,} from "@shopify/polaris";
+import {useCallback, useState} from "react";
 
-import type { DataPikerRange } from "@/types/components.type";
+import type {DataPikerRange} from "@/types/components.type";
 
 /**
  * This is silly page which deals nothing
@@ -26,9 +19,9 @@ function BillingsPage() {
 
   const [selectedOption, setSelectedOption] = useState("monthly");
   const options = [
-    { label: "Monthly", value: "monthly" },
-    { label: "Annually", value: "annually" },
-    { label: "Weekly", value: "weekly" },
+    {label: "Monthly", value: "monthly"},
+    {label: "Annually", value: "annually"},
+    {label: "Weekly", value: "weekly"},
   ];
 
   const handleOptionChange = useCallback(
@@ -44,7 +37,8 @@ function BillingsPage() {
             <DatePicker
               month={selectedDateRange.start.getMonth()}
               year={selectedDateRange.start.getFullYear()}
-              onMonthChange={(month, year) => {}}
+              onMonthChange={(month, year) => {
+              }}
               onChange={handleDateRangeChange}
               selected={selectedDateRange}
             />

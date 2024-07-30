@@ -1,13 +1,13 @@
-import { EmptyState } from "@shopify/polaris";
-import { useNavigate } from "@remix-run/react";
+import {EmptyState} from "@shopify/polaris";
+import {useNavigate} from "@remix-run/react";
 
-import type { FC } from "react";
+import type {FC} from "react";
 
 interface EmptyQRCodeStateProps {
   onAction: () => void;
 }
 
-const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({ onAction }) => (
+const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({onAction}) => (
   <EmptyState
     heading="Create funnel to start discount program"
     action={{
@@ -23,5 +23,5 @@ const EmptyQRCodeState: FC<EmptyQRCodeStateProps> = ({ onAction }) => (
 export default function Index() {
   const navigate = useNavigate();
 
-  return <EmptyQRCodeState onAction={() => navigate("new")} />;
+  return <EmptyQRCodeState onAction={() => navigate("new")}/>;
 }

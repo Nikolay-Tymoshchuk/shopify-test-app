@@ -1,12 +1,9 @@
-import { PassThrough } from "stream";
-import { renderToPipeableStream } from "react-dom/server";
-import { RemixServer } from "@remix-run/react";
-import {
-  createReadableStreamFromReadable,
-  type EntryContext,
-} from "@remix-run/node";
-import { isbot } from "isbot";
-import { addDocumentResponseHeaders } from "./shopify.server";
+import {PassThrough} from "stream";
+import {renderToPipeableStream} from "react-dom/server";
+import {RemixServer} from "@remix-run/react";
+import {createReadableStreamFromReadable, type EntryContext,} from "@remix-run/node";
+import {isbot} from "isbot";
+import {addDocumentResponseHeaders} from "./shopify.server";
 
 const ABORT_DELAY = 5000;
 
@@ -23,7 +20,7 @@ export default async function handleRequest(
     : "onShellReady";
 
   return new Promise((resolve, reject) => {
-    const { pipe, abort } = renderToPipeableStream(
+    const {pipe, abort} = renderToPipeableStream(
       <RemixServer
         context={remixContext}
         url={request.url}

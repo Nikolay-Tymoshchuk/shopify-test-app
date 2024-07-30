@@ -1,4 +1,4 @@
-import type { FunnelBasic } from "./models.type";
+import type {FunnelBasic} from "./models.type";
 
 export type StatisticData = {
   totalOrders: number;

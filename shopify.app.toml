@@ -25,9 +25,9 @@ redirect_urls = [
 [webhooks]
 api_version = "2024-07"
 
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks"
+[[webhooks.subscriptions]]
+topics = ["app/uninstalled"]
+uri = "/webhooks"
 
 [pos]
 embedded = false

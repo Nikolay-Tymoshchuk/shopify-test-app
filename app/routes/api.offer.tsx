@@ -1,21 +1,18 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
+import {json} from "@remix-run/node";
 
-import {
-  getAllFunnelsTriggerProductsIds,
-  getOffer,
-} from "../models/Funnel.server";
-import { getSession } from "../models/Session.server";
-import { authenticate } from "../shopify.server";
+import {getAllFunnelsTriggerProductsIds, getOffer,} from "../models/Funnel.server";
+import {getSession} from "../models/Session.server";
+import {authenticate} from "../shopify.server";
 
-import type { CurrentSessionType } from "@/types/offer.type";
+import type {CurrentSessionType} from "@/types/offer.type";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({request}: LoaderFunctionArgs) => {
   await authenticate.public.checkout(request);
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { cors, sessionToken } = await authenticate.public.checkout(request);
+export const action = async ({request}: ActionFunctionArgs) => {
+  const {cors, sessionToken} = await authenticate.public.checkout(request);
 
   /**
    * Get the list of product ids(string) from all products in the offer
@@ -59,7 +56,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
    * If there are no products from the offer in the funnels, return null
    */
   if (productsIdsExistedInFunnels.length === 0) {
-    return cors(json({ offer: null }));
+    return cors(json({offer: null}));
   }
 
   const shop = (sessionToken as CurrentSessionType).input_data.shop.domain;
@@ -69,7 +66,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
    * Authenticate request with the shopify session token
    */
   if (!tokenRecord) {
-    return cors(json({ offer: null }));
+    return cors(json({offer: null}));
   }
 
   /**
@@ -81,5 +78,5 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     tokenRecord.accessToken,
   );
 
-  return cors(json({ offer }));
+  return cors(json({offer}));
 };

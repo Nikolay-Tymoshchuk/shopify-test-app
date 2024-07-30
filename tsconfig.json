@@ -4,11 +4,15 @@
     "**/*.ts",
     "**/*.tsx",
     "app/routes/loader.tsx",
-    "app/routes/app._index.jsx",
-    "extensions/my-post-purchase-test-extension/src/index.jsx"
+    "app/routes/app._index.tsx",
+    "extensions/my-post-purchase-test-extension/src/index.tsx"
   ],
   "compilerOptions": {
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "lib": [
+      "DOM",
+      "DOM.Iterable",
+      "ES2022"
+    ],
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": true,
@@ -24,9 +28,15 @@
     "target": "ES2022",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./app/*"],
-      "@/*": ["./*"]
+      "~/*": [
+        "./app/*"
+      ],
+      "@/*": [
+        "./*"
+      ]
     },
-    "types": ["node"]
+    "types": [
+      "node"
+    ]
   }
 }

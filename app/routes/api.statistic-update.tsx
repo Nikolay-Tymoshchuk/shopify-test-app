@@ -1,12 +1,12 @@
-import { json } from "@remix-run/node";
+import type {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
+import {json} from "@remix-run/node";
 
-import { addOneToStatistic } from "~/models/Statistic.server";
-import { authenticate } from "~/shopify.server";
+import {addOneToStatistic} from "~/models/Statistic.server";
+import {authenticate} from "~/shopify.server";
 
-import type { CurrentSessionType } from "@/types/offer.type";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
+import type {CurrentSessionType} from "@/types/offer.type";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({request}: LoaderFunctionArgs) => {
   await authenticate.public.checkout(request);
 };
 
@@ -16,13 +16,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
  * This data nested in the body of the request.
  */
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { cors, sessionToken } = await authenticate.public.checkout(request);
+export const action = async ({request}: ActionFunctionArgs) => {
+  const {cors, sessionToken} = await authenticate.public.checkout(request);
 
   const shop = (sessionToken as CurrentSessionType).input_data.shop.domain;
   const body = await request.json();
 
-  await addOneToStatistic({ shop, ...body });
+  await addOneToStatistic({shop, ...body});
 
-  return cors(json({ success: true }));
+  return cors(json({success: true}));
 };

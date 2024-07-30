@@ -1,4 +1,4 @@
-import type { JwtPayload } from "@shopify/shopify-app-remix/server";
+import type {JwtPayload} from "@shopify/shopify-app-remix/server";
 
 type InputData = {
   token: string | null;

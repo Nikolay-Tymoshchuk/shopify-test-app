@@ -1,19 +1,10 @@
-import {
-  Box,
-  Card,
-  Layout,
-  Link,
-  List,
-  Page,
-  Text,
-  BlockStack,
-} from "@shopify/polaris";
-import { TitleBar } from "@shopify/app-bridge-react";
+import {BlockStack, Box, Card, Layout, Link, List, Page, Text,} from "@shopify/polaris";
+import {TitleBar} from "@shopify/app-bridge-react";
 
 export default function AdditionalPage() {
   return (
     <Page>
-      <TitleBar title="Additional page" />
+      <TitleBar title="Additional page"/>
       <Layout>
         <Layout.Section>
           <Card>
@@ -65,7 +56,7 @@ export default function AdditionalPage() {
   );
 }
 
-function Code({ children }: { children: React.ReactNode }) {
+function Code({children}: { children: React.ReactNode }) {
   return (
     <Box
       as="span"

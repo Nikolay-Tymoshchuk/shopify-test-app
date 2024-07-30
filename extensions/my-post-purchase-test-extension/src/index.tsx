@@ -30,12 +30,12 @@ import type {
 } from "@/types/components.type";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://bg-exit-singing-nz.trycloudflare.com";
+const APP_URL = "https://respondent-cc-yrs-spiritual.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
-  async ({ inputData, storage }) => {
+  async ({inputData, storage}) => {
     const postPurchaseFunnel = await fetch(`${APP_URL}/api/offer`, {
       method: "POST",
       headers: {
@@ -49,21 +49,21 @@ extend(
 
     await storage.update(postPurchaseFunnel);
 
-    return { render: true };
+    return {render: true};
   },
 );
 
-render("Checkout::PostPurchase::Render", () => <App />);
+render("Checkout::PostPurchase::Render", () => <App/>);
 
 export function App() {
-  const { storage, inputData, calculateChangeset, applyChangeset, done } =
+  const {storage, inputData, calculateChangeset, applyChangeset, done} =
     useExtensionInput() as PostPurchaseRenderApi;
 
   const [loading, setLoading] = useState(true);
   const [calculatedPurchase, setCalculatedPurchase] =
     useState<CalculatedPurchase>();
 
-  const { offer: purchaseOption } = storage.initialData as {
+  const {offer: purchaseOption} = storage.initialData as {
     offer: PurchaseOption;
   };
 
@@ -94,7 +94,7 @@ export function App() {
       const {
         id,
         title,
-        image: { url, altText },
+        image: {url, altText},
         displayName,
         inventoryQuantity,
       } = targetedVariant;
@@ -113,14 +113,14 @@ export function App() {
   );
 
   /**
-   *  Slider actions for the images. It is necessary if there are more than one image option (few variants)
+   *  Slider actions for the images. It is necessary if there is more than one image option (few variants)
    */
   const isMoreThenOneImgOption = useMemo(() => {
     /**
      * Get the array of images for the slider.
      */
     const imageSetArray =
-      purchaseOption.variants?.map(({ image: { url, altText } }) => ({
+      purchaseOption.variants?.map(({image: {url, altText}}) => ({
         url,
         altText,
       })) || [];
@@ -134,7 +134,7 @@ export function App() {
      * Get the index of the current image in the array
      */
     const currentImageIndex = imageSetArray.findIndex(
-      ({ url }) => url === options.imageSrc,
+      ({url}) => url === options.imageSrc,
     );
 
     /**
@@ -145,10 +145,10 @@ export function App() {
         (currentImageIndex + direction + imageSetArray.length) %
         imageSetArray.length;
 
-      const { url: newImageSrc } = imageSetArray[newIndex];
+      const {url: newImageSrc} = imageSetArray[newIndex];
 
       const variantId = purchaseOption.variants.find(
-        ({ image }) => image.url === newImageSrc,
+        ({image}) => image.url === newImageSrc,
       )?.id;
 
       /**
@@ -161,11 +161,11 @@ export function App() {
     const onPrevImage = () => changeImage(-1);
 
     /**
-     * Change the image in the slider and variants data if the user clicks on the image
+     * Change the image in the slider and variant data if the user clicks on the image
      */
     const onImageClick = (imageSrc: string) => {
       const variantId = purchaseOption.variants.find(
-        ({ image }) => image.url === imageSrc,
+        ({image}) => image.url === imageSrc,
       )?.id;
       variantId && handleSelectChange(variantId);
     };
@@ -200,7 +200,7 @@ export function App() {
       setCalculatedPurchase(result.calculatedPurchase);
     }
 
-    calculatePurchase().then(()=>{
+    calculatePurchase().then(() => {
       setLoading(false)
     });
 
@@ -308,9 +308,10 @@ export function App() {
   }
 
   const handleQuantityChange = (value: string) => {
-    setOptions({ ...options, quantity: Number(value) });
+    setOptions({...options, quantity: Number(value)});
   };
 
+// @ts-ignore
   return (
     <BlockStack spacing="loose">
       <CalloutBanner border="none" spacing="loose">
@@ -324,13 +325,13 @@ export function App() {
       </CalloutBanner>
       <Layout
         media={[
-          { viewportSize: "small", sizes: [1, 0, 1], maxInlineSize: 0.9 },
-          { viewportSize: "medium", sizes: [532, 0, 1], maxInlineSize: 420 },
-          { viewportSize: "large", sizes: [560, 38, 340] },
+          {viewportSize: "small", sizes: [1, 0, 1], maxInlineSize: 0.9},
+          {viewportSize: "medium", sizes: [532, 0, 1], maxInlineSize: 420},
+          {viewportSize: "large", sizes: [560, 38, 340]},
         ]}
       >
         <BlockStack>
-          <Image description="product photo" source={options.imageSrc} />
+          <Image description="product photo" source={options.imageSrc}/>
           {isMoreThenOneImgOption.isNecessarySlider && (
             <InlineStack>
               <Button onPress={isMoreThenOneImgOption.onPrevImage} plain>
@@ -355,7 +356,7 @@ export function App() {
             </InlineStack>
           )}
         </BlockStack>
-        <BlockStack />
+        <BlockStack/>
         <BlockStack>
           <Heading level={2}>{options.mainTitle}</Heading>
           <PriceHeader
@@ -395,7 +396,7 @@ export function App() {
             />
           </Bookend>
           <BlockStack spacing="tight">
-            <Separator />
+            <Separator/>
             <MoneyLine
               label="Subtotal"
               amount={payments.discountedPrice}
@@ -411,8 +412,8 @@ export function App() {
               amount={payments.taxes}
               loading={!calculatedPurchase}
             />
-            <Separator />
-            <MoneySummary label="Total" amount={payments.total} />
+            <Separator/>
+            <MoneySummary label="Total" amount={payments.total}/>
           </BlockStack>
           <BlockStack>
             <Button onPress={acceptOrder} submit loading={loading}>
@@ -429,10 +430,10 @@ export function App() {
 }
 
 function PriceHeader({
-  discountedPrice,
-  originalPrice,
-  loading,
-}: PostPurchasePriceHeader) {
+                       discountedPrice,
+                       originalPrice,
+                       loading,
+                     }: PostPurchasePriceHeader) {
   return (
     <TextContainer alignment="leading" spacing="loose">
       <Text role="deletion" size="large">
@@ -446,7 +447,7 @@ function PriceHeader({
   );
 }
 
-function MoneyLine({ label, amount, loading = false }: PostPurchaseMoneyLine) {
+function MoneyLine({label, amount, loading = false}: PostPurchaseMoneyLine) {
   return (
     <Tiles>
       <TextBlock size="small">{label}</TextBlock>
@@ -459,7 +460,7 @@ function MoneyLine({ label, amount, loading = false }: PostPurchaseMoneyLine) {
   );
 }
 
-function MoneySummary({ label, amount }: PostPurchaseMoneySummary) {
+function MoneySummary({label, amount}: PostPurchaseMoneySummary) {
   return (
     <Tiles>
       <TextBlock size="medium" emphasized>

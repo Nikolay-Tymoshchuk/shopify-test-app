@@ -1,7 +1,7 @@
-import type { CSSProperties } from "react";
-import type { FunnelExtendedByProducts } from "./models.type";
-import type { StatisticData } from "./data.type";
-import type { NavigateFunction } from "@remix-run/react";
+import type {CSSProperties} from "react";
+import type {FunnelExtendedByProducts} from "./models.type";
+import type {StatisticData} from "./data.type";
+import type {NavigateFunction} from "@remix-run/react";
 
 export interface EmptyActionStateProps {
   onAction: () => void;
@@ -39,13 +39,18 @@ export interface UIModalElement
   content?: HTMLElement;
   src?: string;
   readonly contentWindow?: Window | null;
+
   show(): Promise<void>;
+
   hide(): Promise<void>;
+
   toggle(): Promise<void>;
+
   addEventListener(
     type: "show" | "hide",
     listener: EventListenerOrEventListenerObject,
   ): void;
+
   removeEventListener(
     type: "show" | "hide",
     listener: EventListenerOrEventListenerObject,
@@ -89,6 +94,7 @@ export interface PostPurchaseMoneySummary {
   label: string;
   amount: number;
 }
+
 export interface PostPurchaseMoneyLine extends PostPurchaseMoneySummary {
   loading?: boolean;
 }

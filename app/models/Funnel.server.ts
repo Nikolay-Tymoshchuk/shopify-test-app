@@ -1,10 +1,10 @@
 import db from "../db.server";
 
-import type { Variant } from "@/types/offer.type";
-import type { Funnel, FunnelFormFields } from "@/types/models.type";
+import type {Variant} from "@/types/offer.type";
+import type {Funnel, FunnelFormFields} from "@/types/models.type";
 
 export async function getFunnel(id: number, graphql: Function) {
-  const funnel = await db.funnel.findFirst({ where: { id } });
+  const funnel = await db.funnel.findFirst({where: {id}});
 
   if (!funnel) {
     return null;
@@ -37,7 +37,7 @@ export async function getFunnels(
   limit: number = 5,
 ) {
   const total = await db.funnel.count({
-    where: { shop },
+    where: {shop},
   });
 
   if (total === 0) {
@@ -52,8 +52,8 @@ export async function getFunnels(
   const currentPage = page * limit > total ? Math.ceil(total / limit) : page;
 
   const funnels = await db.funnel.findMany({
-    where: { shop },
-    orderBy: { updatedAt: "desc" },
+    where: {shop},
+    orderBy: {updatedAt: "desc"},
     skip: (currentPage - 1) * limit,
     take: limit,
   });
@@ -79,7 +79,7 @@ export async function getFunnels(
 }
 
 export async function getFunnelInfo(id: number) {
-  const funnel = await db.funnel.findFirst({ where: { id } });
+  const funnel = await db.funnel.findFirst({where: {id}});
 
   if (!funnel) {
     return null;
@@ -94,7 +94,7 @@ export async function getFunnelByTriggerProductId(
   accessToken: string,
 ) {
   const funnel = await db.funnel.findFirst({
-    where: { triggerProductId, shop },
+    where: {triggerProductId, shop},
   });
 
   if (!funnel) {
@@ -110,8 +110,8 @@ export async function getOffer(
   accessToken: string,
 ) {
   const funnels = await db.funnel.findMany({
-    where: { triggerProductId: { in: triggerProductsIds }, shop },
-    orderBy: { offerProductPrice: "desc" },
+    where: {triggerProductId: {in: triggerProductsIds}, shop},
+    orderBy: {offerProductPrice: "desc"},
   });
 
   if (funnels.length > 0) {
@@ -163,7 +163,7 @@ async function supplementFunnel(funnel: Funnel, graphql: Function) {
     },
   );
 
-  const { data } = await response.json();
+  const {data} = await response.json();
 
   return {
     ...funnel,
@@ -198,7 +198,7 @@ export function validateFunnel(data: FunnelFormFields) {
 }
 
 async function supplementPostPurchaseFunnel(
-  { id, discount, offerProductId }: Funnel,
+  {id, discount, offerProductId}: Funnel,
   accessToken: string,
 ) {
   async function fetchGraphQL(
@@ -213,7 +213,7 @@ async function supplementPostPurchaseFunnel(
           "Content-Type": "application/json",
           "X-Shopify-Access-Token": accessToken,
         },
-        body: JSON.stringify({ query, variables }), // Изменено здесь
+        body: JSON.stringify({query, variables}), // Изменено здесь
       },
     );
     return response.json();
@@ -253,7 +253,7 @@ async function supplementPostPurchaseFunnel(
   });
 
   const {
-    data: { product },
+    data: {product},
   } = response;
 
   const variantId = product.variants.nodes[0].id.split("/")[4];

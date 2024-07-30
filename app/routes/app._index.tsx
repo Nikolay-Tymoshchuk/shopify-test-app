@@ -1,11 +1,7 @@
-import { json, redirect } from "@remix-run/node";
-import {
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-  useSearchParams,
-} from "@remix-run/react";
-import type { TableData } from "@shopify/polaris";
+import type {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
+import {json, redirect} from "@remix-run/node";
+import {useFetcher, useLoaderData, useNavigate, useSearchParams,} from "@remix-run/react";
+import type {TableData} from "@shopify/polaris";
 import {
   ActionList,
   BlockStack,
@@ -26,16 +22,14 @@ import {
   Text,
   Tooltip,
 } from "@shopify/polaris";
-import { DeleteIcon, EditIcon, InfoIcon } from "@shopify/polaris-icons";
-import { useCallback, useEffect, useState } from "react";
+import {DeleteIcon, EditIcon, InfoIcon} from "@shopify/polaris-icons";
+import type {FC} from "react";
+import {useCallback, useEffect, useState} from "react";
 
 import db from "~/db.server";
-import { getFunnels } from "~/models/Funnel.server";
-import { getTotalStats } from "~/models/Statistic.server";
-import { authenticate } from "~/shopify.server";
-
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
-import type { FC } from "react";
+import {getFunnels} from "~/models/Funnel.server";
+import {getTotalStats} from "~/models/Statistic.server";
+import {authenticate} from "~/shopify.server";
 import type {
   ActivatorProps,
   DropdownProps,
@@ -45,11 +39,11 @@ import type {
   ModalProps,
   UIModalElement,
 } from "@/types/components.type";
-import type { StatisticData } from "@/types/data.type";
-import type { FunnelExtendedByProducts } from "@/types/models.type";
+import type {StatisticData} from "@/types/data.type";
+import type {FunnelExtendedByProducts} from "@/types/models.type";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin, session } = await authenticate.admin(request);
+export const loader = async ({request}: LoaderFunctionArgs) => {
+  const {admin, session} = await authenticate.admin(request);
 
   /**
    * Get List of funnels with pagination data
@@ -90,7 +84,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({request}: ActionFunctionArgs) => {
   const formData = await request.formData();
 
   /**
@@ -99,19 +93,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
    */
 
   await db.funnel.delete({
-    where: { id: Number(formData.get("id")) },
+    where: {id: Number(formData.get("id"))},
   });
 
   redirect("/app");
 
-  return json({ success: true });
+  return json({success: true});
 };
 
 /**
  * The main page of the application.
  */
 export default function Index() {
-  const { funnels, total, page, limit, stats } =
+  const {funnels, total, page, limit, stats} =
     useLoaderData() as MainPageLoaderProps;
 
   const navigate = useNavigate();
@@ -184,6 +178,7 @@ export default function Index() {
       }
     });
   }
+
   const [sortedRows, setSortedRows] = useState<TableData[][] | null>(null);
   const rows = sortedRows ? sortedRows : initiallySortedRows;
 
@@ -201,7 +196,7 @@ export default function Index() {
           <Page
             title="Funnels"
             titleMetadata={
-              <InfoTooltip content="Here you can manipulate with your funnels" />
+              <InfoTooltip content="Here you can manipulate with your funnels"/>
             }
             secondaryActions={
               <Button onClick={() => navigate("settings/new")}>
@@ -210,7 +205,7 @@ export default function Index() {
             }
           >
             <BlockStack gap="800">
-              <Divider borderColor="border" borderWidth="025" />
+              <Divider borderColor="border" borderWidth="025"/>
               <div>
                 <DataTable
                   columnContentTypes={["text", "text", "text", "numeric"]}
@@ -235,9 +230,9 @@ export default function Index() {
                     label="Items per page"
                     labelInline
                     options={[
-                      { label: "2", value: "2" },
-                      { label: "5", value: "5" },
-                      { label: "10", value: "10" },
+                      {label: "2", value: "2"},
+                      {label: "5", value: "5"},
+                      {label: "10", value: "10"},
                     ]}
                     value={String(limit)}
                     onChange={(value) => {
@@ -262,26 +257,26 @@ export default function Index() {
               </div>
             </BlockStack>
           </Page>
-          <Modal funnels={funnels} activeId={activeId} />
+          <Modal funnels={funnels} activeId={activeId}/>
         </>
       ) : (
-        <EmptyQRCodeState onAction={() => navigate("settings/new")} />
+        <EmptyQRCodeState onAction={() => navigate("settings/new")}/>
       )}
     </>
   );
 }
 
-const InfoTooltip: FC<InfoTooltipProps> = ({ content = "", style = {} }) => {
+const InfoTooltip: FC<InfoTooltipProps> = ({content = "", style = {}}) => {
   return (
-    <div style={{ ...style }}>
+    <div style={{...style}}>
       <Tooltip content={content}>
-        <Icon source={InfoIcon} tone="base" />
+        <Icon source={InfoIcon} tone="base"/>
       </Tooltip>
     </div>
   );
 };
 
-const EmptyQRCodeState: FC<EmptyActionStateProps> = ({ onAction }) => (
+const EmptyQRCodeState: FC<EmptyActionStateProps> = ({onAction}) => (
   <EmptyState
     heading="Create funnel to start discount program"
     action={{
@@ -294,7 +289,7 @@ const EmptyQRCodeState: FC<EmptyActionStateProps> = ({ onAction }) => (
   </EmptyState>
 );
 
-const Modal: FC<ModalProps> = ({ funnels, activeId }) => {
+const Modal: FC<ModalProps> = ({funnels, activeId}) => {
   const fetcher = useFetcher();
 
   /**
@@ -319,7 +314,7 @@ const Modal: FC<ModalProps> = ({ funnels, activeId }) => {
             <b>{`${funnels?.find((funnel: FunnelExtendedByProducts) => funnel.id === activeId)?.title}`}</b>
           </Text>
         ) : (
-          <Spinner accessibilityLabel="Spinner example" size="small" />
+          <Spinner accessibilityLabel="Spinner example" size="small"/>
         )}
       </Box>
       <ui-title-bar title={"Delete funnel"}>
@@ -328,8 +323,8 @@ const Modal: FC<ModalProps> = ({ funnels, activeId }) => {
           tone="critical"
           onClick={() => {
             fetcher.submit(
-              { action: "delete", id: activeId },
-              { method: "post" },
+              {action: "delete", id: activeId},
+              {method: "post"},
             );
           }}
         >
@@ -353,22 +348,22 @@ const Modal: FC<ModalProps> = ({ funnels, activeId }) => {
 };
 
 const Analytic: FC<StatisticData> = ({
-  totalRevenue,
-  totalDiscount,
-  totalOrders,
-}) => {
+                                       totalRevenue,
+                                       totalDiscount,
+                                       totalOrders,
+                                     }) => {
   return (
     <Page
       title="Dashboard"
       titleMetadata={
-        <InfoTooltip content="Here you can view your store's performance" />
+        <InfoTooltip content="Here you can view your store's performance"/>
       }
     >
       <BlockStack gap="800">
-        <Divider borderColor="border" borderWidth="025" />
+        <Divider borderColor="border" borderWidth="025"/>
         <Layout>
           <Layout.Section>
-            <Grid columns={{ xs: 1, sm: 2, md: 2, lg: 3, xl: 3 }}>
+            <Grid columns={{xs: 1, sm: 2, md: 2, lg: 3, xl: 3}}>
               <Grid.Cell>
                 <Card roundedAbove="sm">
                   <Text as="h2" fontWeight="medium" variant="headingSm">
@@ -393,7 +388,7 @@ const Analytic: FC<StatisticData> = ({
                     <Text as="h2" fontWeight="medium" variant="headingSm">
                       Total Discounts
                     </Text>
-                    <InfoTooltip content={"Total discounts applied"} />
+                    <InfoTooltip content={"Total discounts applied"}/>
                   </div>
 
                   <Box paddingBlockStart="200">
@@ -414,7 +409,7 @@ const Analytic: FC<StatisticData> = ({
                     <Text as="h2" fontWeight="medium" variant="headingSm">
                       Order Count
                     </Text>
-                    <InfoTooltip content={"Total number of orders"} />
+                    <InfoTooltip content={"Total number of orders"}/>
                   </div>
 
                   <Box paddingBlockStart="200">
@@ -432,7 +427,7 @@ const Analytic: FC<StatisticData> = ({
   );
 };
 
-const Activator: FC<ActivatorProps> = ({ toggleActive, isExpanded }) => {
+const Activator: FC<ActivatorProps> = ({toggleActive, isExpanded}) => {
   return (
     <div
       style={{
@@ -452,7 +447,7 @@ const Activator: FC<ActivatorProps> = ({ toggleActive, isExpanded }) => {
   );
 };
 
-const Drop: FC<DropdownProps> = ({ id, activeId, toggleActive, navigate }) => {
+const Drop: FC<DropdownProps> = ({id, activeId, toggleActive, navigate}) => {
   const isExpanded = activeId === id;
 
   return (
