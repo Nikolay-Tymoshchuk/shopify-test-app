@@ -1,4 +1,3 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import {
   useActionData,
@@ -23,8 +22,6 @@ import {
   Thumbnail,
 } from "@shopify/polaris";
 import { ImageIcon } from "@shopify/polaris-icons";
-import { useCallback, useEffect, useState } from "react";
-
 import db from "~/db.server";
 import {
   getAllFunnelsTriggerProductsIds,
@@ -32,10 +29,11 @@ import {
   validateFunnel,
 } from "~/models/Funnel.server";
 import { authenticate } from "~/shopify.server";
+import { useCallback, useEffect, useState } from "react";
 
 import type { FunnelPageLoaderProps } from "@/types/components.type";
 import type { FunnelFormData } from "@/types/data.type";
-import { Funnel, FunnelFormFields } from "@/types/models.type";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@remix-run/node";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const {
@@ -46,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   /**
    * Get a list of all id products that are target in the Funnels List.
-   * This is necessary to ensure that when creating or editing a Funnel, these products do not appear in the target list.
+   * This is necessary to ensure that when creating or editing a Funnel these products do not appear in the target list.
    * This way we avoid situations where one product can be targeted in several funnels at the same time
    */
   const triggeredIds = await getAllFunnelsTriggerProductsIds();
@@ -108,10 +106,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
    * If funnel exists, we update it.
    */
 
-const funnel: Funnel =
-  params.id === "new"
-    ? (await db.funnel.create({ data })) as Funnel
-    : (await db.funnel.update({ where: { id: Number(params.id) }, data })) as Funnel;
+  const funnel =
+    params.id === "new"
+      ? await db.funnel.create({ data })
+      : await db.funnel.update({ where: { id: Number(params.id) }, data });
 
   /**
    * redirect needs for update form state.
@@ -134,17 +132,18 @@ export default function FunnelsForm() {
   );
 
   /**
-   * Get error state for form fields
-   */
-
-  const errors =
-    (useActionData() as { errors?: Partial<FunnelFormFields> })?.errors || {};
-
-  /**
    * Get initial form state for control changes (!isDirty) and reset form (handleCancel)
    */
   const [cleanFormState, setCleanFormState] = useState(funnel);
   const isDirty = JSON.stringify(formState) !== JSON.stringify(cleanFormState);
+
+  /**
+   * Get errors from the server response if some fields are not valid
+   */
+
+  const errors = useActionData<typeof action>()?.errors || {};
+
+  console.log("errors", errors);
 
   /**
    * Handle changes in the input fields.
@@ -187,7 +186,7 @@ export default function FunnelsForm() {
   }, [discountValue, formState]);
 
   /**
-   * Get loading state for additional advanced actions like “disable” buttons etc.
+   * Get loading state for additional advanced actions like disable buttons etc.
    */
   const navigate = useNavigate();
   const nav = useNavigation();
@@ -195,7 +194,7 @@ export default function FunnelsForm() {
 
   /**
    *
-   * @param idOfButton - id of the button clicked
+   * @param idOfButton - id of the button that was clicked
    * Select product from the Shopify store functionality.
    * Depending on the idOfButton, the function selects the product for the offer or trigger.
    */
@@ -208,7 +207,7 @@ export default function FunnelsForm() {
      * Open Shopify Resource Picker. Depending on the idOfButton,
      * the filter is set to exclude the products that are already in the funnel.
      */
-    const products = await window["shopify"].resourcePicker({
+    const products = await window.shopify.resourcePicker({
       type: "product",
       action: "select",
       multiple: false,
@@ -246,7 +245,7 @@ export default function FunnelsForm() {
 
   /**
    *
-   * @param idOfClearButton - id of the button clicked
+   * @param idOfClearButton - id of the button that was clicked
    * Clear product data from the form.
    * Depending on the idOfClearButton, the function clears the product data for the offer or trigger.
    */
@@ -353,50 +352,52 @@ export default function FunnelsForm() {
                 </Grid.Cell>
                 <Grid.Cell columnSpan={{ md: 3, lg: 3, xl: 3 }}>
                   {formState.triggerProductId ? (
-                    <>
-                      <Card>
+                    <Card>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                        }}
+                      >
                         <div
                           style={{
                             display: "flex",
                             alignItems: "center",
-                            justifyContent: "space-between",
+                            gap: "16px",
                           }}
                         >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "16px",
-                            }}
-                          >
-                            <Thumbnail
-                              source={
-                                formState.triggerProductImage || ImageIcon
-                              }
-                              alt={formState.triggerProductTitle}
-                              size="extraSmall"
-                            />
-                            <Text as="h3" variant="headingSm">
-                              {formState.triggerProductTitle}
-                            </Text>
-                          </div>
-                          <Button
-                            variant="primary"
-                            tone="critical"
-                            onClick={() =>
-                              clearProductData("clear-trigger-product")
-                            }
-                            id="clear-trigger-product"
-                            accessibilityLabel="Select Product"
-                          >
-                            Remove
-                          </Button>
+                          <Thumbnail
+                            source={formState.triggerProductImage || ImageIcon}
+                            alt={formState.triggerProductTitle}
+                            size="extraSmall"
+                          />
+                          <Text as="h3" variant="headingSm">
+                            {formState.triggerProductTitle}
+                          </Text>
                         </div>
-                      </Card>
-                    </>
+                        <Button
+                          variant="primary"
+                          tone="critical"
+                          onClick={() =>
+                            clearProductData("clear-trigger-product")
+                          }
+                          id="clear-trigger-product"
+                          accessibilityLabel="Select Product"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </Card>
                   ) : (
                     <>
-                      <Card>
+                      <Card
+                        background={
+                          errors.triggerProductId
+                            ? "bg-fill-critical-secondary"
+                            : "bg-fill"
+                        }
+                      >
                         <div
                           style={{
                             display: "flex",
@@ -419,7 +420,7 @@ export default function FunnelsForm() {
                       {errors.triggerProductId && (
                         <InlineError
                           message={errors.triggerProductId}
-                          fieldID="errorTriggerProductId"
+                          fieldID="trigger-product"
                         />
                       )}
                     </>
@@ -477,7 +478,13 @@ export default function FunnelsForm() {
                     </Card>
                   ) : (
                     <>
-                      <Card>
+                      <Card
+                        background={
+                          errors.offerProductId
+                            ? "bg-fill-critical-secondary"
+                            : "bg-fill"
+                        }
+                      >
                         <div
                           style={{
                             display: "flex",
@@ -500,7 +507,7 @@ export default function FunnelsForm() {
                       {errors.offerProductId && (
                         <InlineError
                           message={errors.offerProductId}
-                          fieldID="errorOfferProductId"
+                          fieldID="offer-product"
                         />
                       )}
                     </>
