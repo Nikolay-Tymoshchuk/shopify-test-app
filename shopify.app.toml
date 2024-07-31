@@ -3,7 +3,7 @@
 client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
 name = "SimplePost"
 handle = "app-1087"
-application_url = "https://respondent-cc-yrs-spiritual.trycloudflare.com"
+application_url = "https://subscribe-advances-terminals-spy.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,17 +17,17 @@ scopes = "read_product_listings,read_products,read_script_tags,read_themes,write
 
 [auth]
 redirect_urls = [
-  "https://respondent-cc-yrs-spiritual.trycloudflare.com/auth/callback",
-  "https://respondent-cc-yrs-spiritual.trycloudflare.com/auth/shopify/callback",
-  "https://respondent-cc-yrs-spiritual.trycloudflare.com/api/auth/callback"
+  "https://subscribe-advances-terminals-spy.trycloudflare.com/auth/callback",
+  "https://subscribe-advances-terminals-spy.trycloudflare.com/auth/shopify/callback",
+  "https://subscribe-advances-terminals-spy.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
-[[webhooks.subscriptions]]
-topics = ["app/uninstalled"]
-uri = "/webhooks"
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks"
 
 [pos]
 embedded = false

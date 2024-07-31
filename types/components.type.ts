@@ -1,7 +1,7 @@
-import type {CSSProperties} from "react";
-import type {FunnelExtendedByProducts} from "./models.type";
-import type {StatisticData} from "./data.type";
-import type {NavigateFunction} from "@remix-run/react";
+import type { CSSProperties } from "react";
+import type { FunnelExtendedByProducts } from "./models.type";
+import type { StatisticData } from "./data.type";
+import type { NavigateFunction } from "@remix-run/react";
 
 export interface EmptyActionStateProps {
   onAction: () => void;
@@ -70,7 +70,8 @@ export interface DataPikerRange {
   end: Date;
 }
 
-export interface FunnelPageLoaderProps extends FunnelExtendedByProducts {
+export interface FunnelPageLoaderProps {
+  funnel: FunnelExtendedByProducts;
   triggeredIds: string[];
 }
 

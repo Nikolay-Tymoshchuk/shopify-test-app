@@ -1,5 +1,5 @@
-import {BlockStack, Box, Card, Layout, Link, List, Page, Text,} from "@shopify/polaris";
 import {TitleBar} from "@shopify/app-bridge-react";
+import {BlockStack, Box, Card, Layout, Link, List, Page, Text} from "@shopify/polaris";
 
 export default function AdditionalPage() {
   return (
