@@ -51,6 +51,7 @@ export type CurrentSessionType = JwtPayload & {
 export type PurchaseOption = {
   id: number;
   productTitle: string;
+  productImage: VariantImage | null;
   discount: number;
   changes: Array<Changes>;
   variants: Array<Variant>;
@@ -76,12 +77,10 @@ export type Variant = {
   title: string;
   availableForSale: boolean;
   inventoryQuantity: number;
-  image: VariantImage;
+  image: VariantImage | null;
 };
 
 type VariantImage = {
-  height: number;
-  width: number;
   altText: string | null;
   url: string;
 };

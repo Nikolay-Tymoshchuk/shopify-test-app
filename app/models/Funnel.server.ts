@@ -262,6 +262,7 @@ async function supplementPostPurchaseFunnel(
     id,
     productTitle: product.title,
     discount,
+    productImage: product.featuredImage,
     variants: product.variants.nodes.map((variant: Variant) => ({
       ...variant,
       id: variant.id.split("/")[4],

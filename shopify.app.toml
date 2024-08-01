@@ -3,7 +3,7 @@
 client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
 name = "SimplePost"
 handle = "app-1087"
-application_url = "https://subscribe-advances-terminals-spy.trycloudflare.com"
+application_url = "https://defining-panel-made-flower.trycloudflare.com"
 embedded = true
 
 [build]
@@ -13,13 +13,13 @@ include_config_on_deploy = true
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_product_listings,read_products,read_script_tags,read_themes,write_product_listings,write_products,write_script_tags,write_themes"
+scopes = "read_orders,read_product_listings,read_products,read_script_tags,read_themes,write_product_listings,write_products,write_script_tags,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://subscribe-advances-terminals-spy.trycloudflare.com/auth/callback",
-  "https://subscribe-advances-terminals-spy.trycloudflare.com/auth/shopify/callback",
-  "https://subscribe-advances-terminals-spy.trycloudflare.com/api/auth/callback"
+  "https://defining-panel-made-flower.trycloudflare.com/auth/callback",
+  "https://defining-panel-made-flower.trycloudflare.com/auth/shopify/callback",
+  "https://defining-panel-made-flower.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
@@ -28,6 +28,46 @@ api_version = "2024-07"
   [[webhooks.subscriptions]]
   topics = [ "app/uninstalled" ]
   uri = "/webhooks"
+
+  [[webhooks.subscriptions]]
+  topics = [ "orders/paid" ]
+  uri = "/webhooks"
+  include_fields = [
+  "currency",
+  "current_subtotal_price",
+  "current_subtotal_price_set",
+  "current_total_additional_fees_set",
+  "current_total_discounts",
+  "current_total_discounts_set",
+  "current_total_duties_set",
+  "current_total_price",
+  "current_total_price_set",
+  "current_total_tax",
+  "current_total_tax_set",
+  "discount_applications",
+  "discount_codes",
+  "fulfillment_status",
+  "fulfillments",
+  "id",
+  "merchant_of_record_app_id",
+  "name",
+  "number",
+  "order_number",
+  "presentment_currency",
+  "processed_at",
+  "subtotal_price",
+  "subtotal_price_set",
+  "total_discounts",
+  "total_discounts_set",
+  "total_line_items_price",
+  "total_line_items_price_set",
+  "total_outstanding",
+  "total_price",
+  "total_price_set",
+  "total_tip_received",
+  "updated_at",
+  "user_id"
+]
 
 [pos]
 embedded = false

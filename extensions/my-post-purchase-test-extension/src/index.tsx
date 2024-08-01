@@ -1,4 +1,4 @@
-import type { PostPurchaseRenderApi } from "@shopify/post-purchase-ui-extensions-react";
+import type {PostPurchaseRenderApi} from "@shopify/post-purchase-ui-extensions-react";
 import {
   BlockStack,
   Bookend,
@@ -19,13 +19,9 @@ import {
   Tiles,
   useExtensionInput,
 } from "@shopify/post-purchase-ui-extensions-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 
-import type {
-  AddVariantChange,
-  CalculatedPurchase,
-  PurchaseOption,
-} from "@/types/offer.type";
+import type {AddVariantChange, CalculatedPurchase, PurchaseOption,} from "@/types/offer.type";
 import type {
   PostPurchaseFormState,
   PostPurchaseMoneyLine,
@@ -34,12 +30,13 @@ import type {
 } from "@/types/components.type";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://subscribe-advances-terminals-spy.trycloudflare.com";
+const APP_URL = "https://defining-panel-made-flower.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
   "Checkout::PostPurchase::ShouldRender",
-  async ({ inputData, storage }) => {
+  async ({inputData, storage}) => {
+    console.log("<==inputData ==>", inputData)
     const postPurchaseFunnel = await fetch(`${APP_URL}/api/offer`, {
       method: "POST",
       headers: {
@@ -51,25 +48,31 @@ extend(
       }),
     }).then((response) => response.json());
 
+    console.log("postPurchaseFunnel==>", postPurchaseFunnel);
+
     await storage.update(postPurchaseFunnel);
 
-    return { render: true };
+    return {render: true};
   },
 );
 
-render("Checkout::PostPurchase::Render", () => <App />);
+render("Checkout::PostPurchase::Render", () => <App/>);
 
 export function App() {
-  const { storage, inputData, calculateChangeset, applyChangeset, done } =
+  const {storage, inputData, calculateChangeset, applyChangeset, done} =
     useExtensionInput() as PostPurchaseRenderApi;
 
   const [loading, setLoading] = useState(true);
   const [calculatedPurchase, setCalculatedPurchase] =
     useState<CalculatedPurchase>();
 
-  const { offer: purchaseOption } = storage.initialData as {
+  const {offer: purchaseOption} = storage.initialData as {
     offer: PurchaseOption;
   };
+
+  console.log("purchaseOption==>", purchaseOption);
+  console.log("storage==>", storage);
+
 
   /**
    * necessary options for the post-purchase form
@@ -78,8 +81,8 @@ export function App() {
     quantity: purchaseOption.changes[0]?.quantity || 1,
     variantId: purchaseOption.variants[0].id || "",
     variantTitle: purchaseOption.variants[0].title,
-    imageSrc: purchaseOption.variants[0].image.url || "",
-    altText: purchaseOption.variants[0].image.altText || "",
+    imageSrc: purchaseOption.productImage?.url || purchaseOption.variants[0].image?.url || "",
+    altText: purchaseOption.productImage?.altText || purchaseOption.variants[0].image?.altText || "",
     maxQuantity: purchaseOption.variants[0].inventoryQuantity || undefined,
     mainTitle: purchaseOption.productTitle,
   });
@@ -98,7 +101,7 @@ export function App() {
       const {
         id,
         title,
-        image: { url, altText },
+        image,
         displayName,
         inventoryQuantity,
       } = targetedVariant;
@@ -107,8 +110,8 @@ export function App() {
         ...options,
         variantId: id,
         variantTitle: title,
-        imageSrc: url,
-        altText: altText ?? "",
+        imageSrc: image?.url || "",
+        altText: image?.altText ?? "",
         mainTitle: displayName,
         maxQuantity: inventoryQuantity,
       });
@@ -124,9 +127,9 @@ export function App() {
      * Get the array of images for the slider.
      */
     const imageSetArray =
-      purchaseOption.variants?.map(({ image: { url, altText } }) => ({
-        url,
-        altText,
+      purchaseOption.variants?.map(({image}) => ({
+        url: image?.url || "",
+        altText: image?.altText || "",
       })) || [];
 
     /**
@@ -138,7 +141,7 @@ export function App() {
      * Get the index of the current image in the array
      */
     const currentImageIndex = imageSetArray.findIndex(
-      ({ url }) => url === options.imageSrc,
+      ({url}) => url === options.imageSrc,
     );
 
     /**
@@ -149,10 +152,10 @@ export function App() {
         (currentImageIndex + direction + imageSetArray.length) %
         imageSetArray.length;
 
-      const { url: newImageSrc } = imageSetArray[newIndex];
+      const {url: newImageSrc} = imageSetArray[newIndex];
 
       const variantId = purchaseOption.variants.find(
-        ({ image }) => image.url === newImageSrc,
+        ({image}) => image?.url === newImageSrc,
       )?.id;
 
       /**
@@ -169,7 +172,7 @@ export function App() {
      */
     const onImageClick = (imageSrc: string) => {
       const variantId = purchaseOption.variants.find(
-        ({ image }) => image.url === imageSrc,
+        ({image}) => image?.url === imageSrc,
       )?.id;
       variantId && handleSelectChange(variantId);
     };
@@ -311,7 +314,7 @@ export function App() {
   }
 
   const handleQuantityChange = (value: string) => {
-    setOptions({ ...options, quantity: Number(value) });
+    setOptions({...options, quantity: Number(value)});
   };
 
   return (
@@ -327,13 +330,13 @@ export function App() {
       </CalloutBanner>
       <Layout
         media={[
-          { viewportSize: "small", sizes: [1, 0, 1], maxInlineSize: 0.9 },
-          { viewportSize: "medium", sizes: [532, 0, 1], maxInlineSize: 420 },
-          { viewportSize: "large", sizes: [560, 38, 340] },
+          {viewportSize: "small", sizes: [1, 0, 1], maxInlineSize: 0.9},
+          {viewportSize: "medium", sizes: [532, 0, 1], maxInlineSize: 420},
+          {viewportSize: "large", sizes: [560, 38, 340]},
         ]}
       >
         <BlockStack>
-          <Image description="product photo" source={options.imageSrc} />
+          <Image description="product photo" source={options.imageSrc}/>
           {isMoreThenOneImgOption.isNecessarySlider && (
             <InlineStack>
               <Button onPress={isMoreThenOneImgOption.onPrevImage} plain>
@@ -358,7 +361,7 @@ export function App() {
             </InlineStack>
           )}
         </BlockStack>
-        <BlockStack />
+        <BlockStack/>
         <BlockStack>
           <Heading level={2}>{options.mainTitle}</Heading>
           <PriceHeader
@@ -398,7 +401,7 @@ export function App() {
             />
           </Bookend>
           <BlockStack spacing="tight">
-            <Separator />
+            <Separator/>
             <MoneyLine
               label="Subtotal"
               amount={payments.discountedPrice}
@@ -414,8 +417,8 @@ export function App() {
               amount={payments.taxes}
               loading={!calculatedPurchase}
             />
-            <Separator />
-            <MoneySummary label="Total" amount={payments.total} />
+            <Separator/>
+            <MoneySummary label="Total" amount={payments.total}/>
           </BlockStack>
           <BlockStack>
             <Button onPress={acceptOrder} submit loading={loading}>
@@ -432,10 +435,10 @@ export function App() {
 }
 
 function PriceHeader({
-  discountedPrice,
-  originalPrice,
-  loading,
-}: PostPurchasePriceHeader) {
+                       discountedPrice,
+                       originalPrice,
+                       loading,
+                     }: PostPurchasePriceHeader) {
   return (
     <TextContainer alignment="leading" spacing="loose">
       <Text role="deletion" size="large">
@@ -449,7 +452,10 @@ function PriceHeader({
   );
 }
 
-function MoneyLine({ label, amount, loading = false }: PostPurchaseMoneyLine) {
+/**
+ * Additional components for the post-purchase form
+ */
+function MoneyLine({label, amount, loading = false}: PostPurchaseMoneyLine) {
   return (
     <Tiles>
       <TextBlock size="small">{label}</TextBlock>
@@ -462,7 +468,7 @@ function MoneyLine({ label, amount, loading = false }: PostPurchaseMoneyLine) {
   );
 }
 
-function MoneySummary({ label, amount }: PostPurchaseMoneySummary) {
+function MoneySummary({label, amount}: PostPurchaseMoneySummary) {
   return (
     <Tiles>
       <TextBlock size="medium" emphasized>

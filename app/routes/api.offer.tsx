@@ -1,9 +1,9 @@
 import type {ActionFunctionArgs, LoaderFunctionArgs} from "@remix-run/node";
 import {json} from "@remix-run/node";
 
-import {getAllFunnelsTriggerProductsIds, getOffer,} from "../models/Funnel.server";
-import {getSession} from "../models/Session.server";
-import {authenticate} from "../shopify.server";
+import {getAllFunnelsTriggerProductsIds, getOffer,} from "~/models/Funnel.server";
+import {getSession} from "~/models/Session.server";
+import {authenticate} from "~/shopify.server";
 
 import type {CurrentSessionType} from "@/types/offer.type";
 
@@ -24,12 +24,12 @@ export const action = async ({request}: ActionFunctionArgs) => {
   );
 
   /**
-   * Get the list of triggered product ids(strings) from all exist funnels
+   * Get the list of triggered product ids(strings) from all existed funnels
    */
   const idsOfTriggeredProducts = await getAllFunnelsTriggerProductsIds();
 
   /**
-   * Check if some products from the offer are exist in some funnels and return array of common products ids for next calculations
+   * Check if some products from the offer exist in some funnels and return array of common products ids for next calculations
    */
   function countCommonElements(
     offersIds: string[],
