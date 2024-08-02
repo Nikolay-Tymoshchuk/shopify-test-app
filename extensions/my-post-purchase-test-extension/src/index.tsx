@@ -30,7 +30,7 @@ import type {
 } from "@/types/components.type";
 
 // For local development, replace APP_URL with your local tunnel URL.
-const APP_URL = "https://defining-panel-made-flower.trycloudflare.com";
+const APP_URL = "https://dividend-continental-advanced-ladder.trycloudflare.com";
 
 // Preload data from your app server to ensure that the extension loads quickly.
 extend(
