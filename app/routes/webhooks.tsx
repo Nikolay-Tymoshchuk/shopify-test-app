@@ -14,8 +14,7 @@ export const action = async ({request}: ActionFunctionArgs) => {
   // More info: https://shopify.dev/docs/apps/build/cli-for-apps/app-configuration
   switch (topic) {
     case "ORDERS_PAID":
-      console.log("<==----------Order paid----------==>", payload);
-      throw new Response("<==----------OK----------==>",{status: 200});
+      throw new Response(JSON.stringify({data: payload}),{ status: 200});
     case "APP_UNINSTALLED":
       if (session) {
         await db.session.deleteMany({where: {shop}});
