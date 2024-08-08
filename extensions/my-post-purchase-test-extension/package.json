@@ -9,6 +9,6 @@
     "@shopify/post-purchase-ui-extensions-react": "^0.13.2"
   },
   "devDependencies": {
-    "@types/react": "^17.0.0"
+    "@types/react": "^18.3.3"
   }
 }
