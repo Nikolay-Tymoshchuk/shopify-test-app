@@ -1,8 +1,10 @@
-import "@shopify/shopify-app-remix/adapters/node";
-import {ApiVersion, AppDistribution, DeliveryMethod, shopifyApp,} from "@shopify/shopify-app-remix/server";
-import {PrismaSessionStorage} from "@shopify/shopify-app-session-storage-prisma";
-import {restResources} from "@shopify/shopify-api/rest/admin/2024-07";
+import { restResources } from "@shopify/shopify-api/rest/admin/2024-07";
+import { ApiVersion, AppDistribution, DeliveryMethod, shopifyApp } from "@shopify/shopify-app-remix/server";
+import { PrismaSessionStorage } from "@shopify/shopify-app-session-storage-prisma";
+
 import prisma from "./db.server";
+
+import "@shopify/shopify-app-remix/adapters/node";
 
 const shopify = shopifyApp({
   apiKey: process.env.SHOPIFY_API_KEY,
