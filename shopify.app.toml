@@ -1,38 +1,28 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "1f55b63cf83c44ccf2719e7f358cbe15"
-name = "SimplePost"
-handle = "app-1087"
-application_url = "https://needed-frankly-crab.ngrok-free.app"
+client_id = "340aa3bcecced4a475bfa18aa973eab8"
+name = "min-max-app"
+handle = "min-max-app-2"
+application_url = "https://virginia-astrology-alpha-once.trycloudflare.com"
 embedded = true
 
 [build]
 automatically_update_urls_on_dev = true
-dev_store_url = "niko-wonderwork.myshopify.com"
-include_config_on_deploy = true
+dev_store_url = "germiny.myshopify.com"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_orders,read_product_listings,read_products,read_script_tags,read_themes,write_product_listings,write_products,write_script_tags,write_themes"
+scopes = "write_products"
 
 [auth]
 redirect_urls = [
-  "https://needed-frankly-crab.ngrok-free.app/auth/callback",
-  "https://needed-frankly-crab.ngrok-free.app/auth/shopify/callback",
-  "https://needed-frankly-crab.ngrok-free.app/api/auth/callback"
+  "https://virginia-astrology-alpha-once.trycloudflare.com/auth/callback",
+  "https://virginia-astrology-alpha-once.trycloudflare.com/auth/shopify/callback",
+  "https://virginia-astrology-alpha-once.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
-api_version = "2024-07"
-
-  [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks"
-
-  [[webhooks.subscriptions]]
-  topics = [ "orders/paid" ]
-  uri = "/webhooks"
-  include_fields = [ "line_items" ]
+api_version = "2024-04"
 
 [pos]
 embedded = false
