@@ -3,7 +3,7 @@
 client_id = "340aa3bcecced4a475bfa18aa973eab8"
 name = "min-max-app"
 handle = "min-max-app-2"
-application_url = "https://virginia-astrology-alpha-once.trycloudflare.com"
+application_url = "https://enables-timothy-plaintiff-qualities.trycloudflare.com"
 embedded = true
 
 [build]
@@ -12,13 +12,13 @@ dev_store_url = "germiny.myshopify.com"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "write_products"
+scopes = "write_products, read_products"
 
 [auth]
 redirect_urls = [
-  "https://virginia-astrology-alpha-once.trycloudflare.com/auth/callback",
-  "https://virginia-astrology-alpha-once.trycloudflare.com/auth/shopify/callback",
-  "https://virginia-astrology-alpha-once.trycloudflare.com/api/auth/callback"
+  "https://enables-timothy-plaintiff-qualities.trycloudflare.com/auth/callback",
+  "https://enables-timothy-plaintiff-qualities.trycloudflare.com/auth/shopify/callback",
+  "https://enables-timothy-plaintiff-qualities.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
